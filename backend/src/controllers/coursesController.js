@@ -85,6 +85,30 @@ exports.getCourseBySlug = async (req, res) => {
   }
 };
 
+exports.getLessonById = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+
+    const lesson = await Lesson.findByPk(lessonId, {
+      include: [{
+        model: Module,
+        as: 'module',
+        attributes: ['id', 'title', 'course_id'],
+        include: [{ model: Course, as: 'course', attributes: ['id', 'title', 'slug'] }]
+      }]
+    });
+
+    if (!lesson) {
+      return res.status(404).json({ error: 'Lesson not found' });
+    }
+
+    res.json(lesson);
+  } catch (error) {
+    console.error('Get lesson error:', error);
+    res.status(500).json({ error: 'Failed to fetch lesson' });
+  }
+};
+
 exports.createCourse = async (req, res) => {
   try {
     const course = await Course.create({ ...req.body, created_by: req.user.id });

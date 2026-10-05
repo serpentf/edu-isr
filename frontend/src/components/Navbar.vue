@@ -1,13 +1,14 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+  <nav class="navbar navbar-expand-lg bg-dark sticky-top" data-bs-theme="dark">
     <div class="container">
       <router-link to="/" class="navbar-brand fw-bold">📚 Edu ISR</router-link>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Меню">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <div class="collapse navbar-collapse" id="navbarNav">
+      <div ref="collapseEl" class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
             <router-link to="/courses" class="nav-link">Курсы</router-link>
@@ -26,10 +27,10 @@
           </template>
         </ul>
 
-        <ul class="navbar-nav">
+        <ul class="navbar-nav align-items-lg-center gap-2">
           <template v-if="auth.isAuthenticated">
             <li class="nav-item">
-              <span class="nav-link text-light">{{ auth.user?.name }}</span>
+              <span class="navbar-text">{{ auth.user?.name }}</span>
             </li>
             <li class="nav-item">
               <button @click="auth.logout()" class="btn btn-outline-danger btn-sm">Выход</button>
@@ -37,7 +38,7 @@
           </template>
 
           <template v-else>
-            <li class="nav-item me-2">
+            <li class="nav-item">
               <router-link to="/login" class="btn btn-outline-light btn-sm">Войти</router-link>
             </li>
             <li class="nav-item">
@@ -51,13 +52,24 @@
 </template>
 
 <script>
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { Collapse } from 'bootstrap';
 import { useAuthStore } from '@/stores/auth';
 
 export default {
   name: 'Navbar',
   setup() {
     const auth = useAuthStore();
-    return { auth };
+    const route = useRoute();
+    const collapseEl = ref(null);
+
+    // Close the mobile menu after navigation
+    watch(() => route.fullPath, () => {
+      Collapse.getInstance(collapseEl.value)?.hide();
+    });
+
+    return { auth, collapseEl };
   }
 };
 </script>

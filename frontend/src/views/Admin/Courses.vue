@@ -11,12 +11,12 @@
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Загрузка...</span>
       </div>
-      <p class="mt-3 text-muted">Загрузка...</p>
+      <p class="mt-3 text-body-secondary">Загрузка...</p>
     </div>
 
     <div v-else class="card shadow-sm">
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
               <th>ID</th>
@@ -36,17 +36,15 @@
               </td>
               <td>{{ course.modules?.length || 0 }}</td>
               <td>
-                <span class="badge" :class="course.is_published ? 'bg-success' : 'bg-secondary'">
+                <span class="badge" :class="course.is_published ? 'text-bg-success' : 'text-bg-secondary'">
                   {{ course.is_published ? 'Опубликован' : 'Черновик' }}
                 </span>
               </td>
               <td>
-                <router-link :to="`/admin/courses/${course.id}/edit`" class="btn btn-sm btn-outline-primary me-1">
-                  ✏️
-                </router-link>
-                <button @click="deleteCourse(course.id)" class="btn btn-sm btn-outline-danger">
-                  🗑️
-                </button>
+                <div class="btn-group btn-group-sm">
+                  <router-link :to="`/admin/courses/${course.id}/edit`" class="btn btn-outline-primary" title="Редактировать">✏️</router-link>
+                  <button @click="deleteCourse(course.id)" class="btn btn-outline-danger" title="Удалить">🗑️</button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -64,6 +62,7 @@
 import { onMounted, ref } from 'vue';
 import { coursesAPI } from '@/api';
 import { useAuthStore } from '@/stores/auth';
+import { levelBadgeClass, levelLabel } from '@/utils/badges';
 
 export default {
   name: 'AdminCourses',
@@ -92,24 +91,6 @@ export default {
       } catch (error) {
         alert('Ошибка при удалении курса');
       }
-    };
-
-    const levelBadgeClass = (level) => {
-      const classes = {
-        beginner: 'bg-success',
-        intermediate: 'bg-warning text-dark',
-        advanced: 'bg-danger'
-      };
-      return classes[level] || 'bg-secondary';
-    };
-
-    const levelLabel = (level) => {
-      const labels = {
-        beginner: 'Начинающий',
-        intermediate: 'Средний',
-        advanced: 'Продвинутый'
-      };
-      return labels[level] || level;
     };
 
     onMounted(() => {

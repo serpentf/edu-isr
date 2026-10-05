@@ -1,8 +1,8 @@
 <template>
-  <div class="min-vh-100 d-flex align-items-center justify-content-center py-5">
-    <div class="col-md-6 col-lg-4">
+  <div class="row justify-content-center py-lg-5">
+    <div class="col-md-8 col-lg-5 col-xl-4">
       <div class="card shadow-sm">
-        <div class="card-body p-5">
+        <div class="card-body p-4 p-lg-5">
           <h1 class="h3 mb-4 text-center">{{ isRegisterMode ? 'Регистрация' : 'Вход' }}</h1>
 
           <form @submit.prevent="handleSubmit">
@@ -29,7 +29,7 @@
           </form>
 
           <div class="text-center mt-4">
-            <span class="text-muted">{{ isRegisterMode ? 'Уже есть аккаунт?' : 'Нет аккаунта?' }}</span>
+            <span class="text-body-secondary">{{ isRegisterMode ? 'Уже есть аккаунт?' : 'Нет аккаунта?' }}</span>
             <router-link :to="isRegisterMode ? '/login' : '/register'" class="ms-1 fw-bold text-decoration-none">
               {{ isRegisterMode ? 'Войти' : 'Зарегистрироваться' }}
             </router-link>

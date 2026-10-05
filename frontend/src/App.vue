@@ -1,7 +1,7 @@
 <template>
-  <div id="app">
+  <div class="d-flex flex-column min-vh-100">
     <Navbar v-if="showNavbar" />
-    <main class="py-4">
+    <main class="flex-grow-1 py-4">
       <div class="container">
         <router-view />
       </div>

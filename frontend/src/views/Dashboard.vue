@@ -2,7 +2,7 @@
   <div>
     <h1 class="mb-4">Мой прогресс</h1>
 
-    <div v-if="auth.isAuthenticated" class="dashboard-content">
+    <div v-if="auth.isAuthenticated">
       <!-- Welcome Banner -->
       <div class="alert alert-primary alert-dismissible fade show mb-4" role="alert">
         <h2 class="h4 mb-0">Привет, {{ auth.user.name }}! 👋</h2>
@@ -11,31 +11,31 @@
       </div>
 
       <!-- Stats Grid -->
-      <div class="row g-4 mb-4">
-        <div class="col-md-4">
+      <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+        <div class="col">
           <div class="card text-center shadow-sm h-100">
             <div class="card-body">
               <div class="display-6 mb-2">📚</div>
               <h3 class="h2 fw-bold">{{ allProgress.length }}</h3>
-              <p class="text-muted mb-0">Всего уроков</p>
+              <p class="text-body-secondary mb-0">Всего уроков</p>
             </div>
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col">
           <div class="card text-center shadow-sm h-100">
             <div class="card-body">
               <div class="display-6 mb-2">✅</div>
               <h3 class="h2 fw-bold text-success">{{ completedCount }}</h3>
-              <p class="text-muted mb-0">Пройдено</p>
+              <p class="text-body-secondary mb-0">Пройдено</p>
             </div>
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col">
           <div class="card text-center shadow-sm h-100">
             <div class="card-body">
               <div class="display-6 mb-2">📊</div>
               <h3 class="h2 fw-bold text-primary">{{ completionRate }}%</h3>
-              <p class="text-muted mb-0">Прогресс</p>
+              <p class="text-body-secondary mb-0">Прогресс</p>
             </div>
           </div>
         </div>
@@ -43,7 +43,7 @@
 
       <!-- My Courses -->
       <div class="card shadow-sm">
-        <div class="card-header bg-white">
+        <div class="card-header">
           <h3 class="h5 mb-0">Мои курсы</h3>
         </div>
         <div class="card-body">
@@ -52,21 +52,18 @@
               <router-link :to="`/course/${item.courseSlug}`" class="text-decoration-none">
                 <div class="card h-100 border-0 shadow-sm">
                   <div class="card-body">
-                    <h5 class="card-title mb-2">{{ item.courseTitle }}</h5>
-                    <div class="progress mb-2" style="height: 10px;">
-                      <div class="progress-bar bg-success" role="progressbar" 
-                           :style="{ width: item.completionPercentage + '%' }"
-                           :aria-valuenow="item.completionPercentage" 
-                           aria-valuemin="0" aria-valuemax="100">
-                      </div>
+                    <h4 class="h5 card-title mb-2">{{ item.courseTitle }}</h4>
+                    <div class="progress mb-2" role="progressbar" :aria-valuenow="item.completionPercentage"
+                         aria-valuemin="0" aria-valuemax="100">
+                      <div class="progress-bar bg-success" :style="{ width: item.completionPercentage + '%' }"></div>
                     </div>
-                    <small class="text-muted">{{ item.completedLessons }} / {{ item.totalLessons }} уроков ({{ item.completionPercentage }}%)</small>
+                    <small class="text-body-secondary">{{ item.completedLessons }} / {{ item.totalLessons }} уроков ({{ item.completionPercentage }}%)</small>
                   </div>
                 </div>
               </router-link>
             </div>
             <div v-if="groupedCourses.length === 0" class="col-12">
-              <p class="text-muted">Вы ещё не начали ни одного курса.</p>
+              <p class="text-body-secondary">Вы ещё не начали ни одного курса.</p>
             </div>
           </div>
         </div>

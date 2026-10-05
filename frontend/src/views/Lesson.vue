@@ -1,100 +1,119 @@
 <template>
-  <div class="lesson-page">
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Загрузка...</span>
-      </div>
-      <p class="mt-3 text-muted">Загрузка урока...</p>
-    </div>
-
-    <div v-else-if="lesson" class="lesson-container">
-      <!-- Lesson Header -->
-      <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
-        <div>
-          <router-link to="/courses" class="text-decoration-none">&larr; Все курсы</router-link>
-          <h1 class="h2 mt-2 mb-0">{{ lesson.title }}</h1>
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+      <div v-if="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Загрузка...</span>
         </div>
-        <span class="badge fs-6 mt-2 mt-md-0" :class="lessonTypeBadgeClass(lesson.type)">{{ getLessonTypeLabel(lesson.type) }}</span>
+        <p class="mt-3 text-body-secondary">Загрузка урока...</p>
       </div>
 
-      <!-- Lesson Content -->
-      <div class="lesson-content card mb-4" v-html="renderedContent"></div>
+      <div v-else-if="lesson">
+        <!-- Lesson Header -->
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><router-link to="/courses">Курсы</router-link></li>
+            <li v-if="lesson.module?.course" class="breadcrumb-item">
+              <router-link :to="`/course/${lesson.module.course.slug}`">{{ lesson.module.course.title }}</router-link>
+            </li>
+            <li v-if="lesson.module" class="breadcrumb-item active" aria-current="page">{{ lesson.module.title }}</li>
+          </ol>
+        </nav>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+          <h1 class="h2 mb-0">{{ lesson.title }}</h1>
+          <span class="badge fs-6" :class="lessonTypeBadgeClass(lesson.type)">{{ lessonTypeLabel(lesson.type) }}</span>
+        </div>
 
-      <!-- Video -->
-      <div v-if="lesson.type === 'video' && lesson.video_url" class="card mb-4">
-        <div class="card-body p-0">
-          <video controls class="w-100" style="max-height: 500px;">
+        <!-- Lesson Content -->
+        <div v-if="lesson.content" class="card shadow-sm mb-4">
+          <div class="card-body p-4" v-html="renderedContent"></div>
+        </div>
+
+        <!-- Video -->
+        <div v-if="lesson.type === 'video' && lesson.video_url" class="ratio ratio-16x9 mb-4">
+          <video controls>
             <source :src="lesson.video_url" />
             Ваш браузер не поддерживает видео.
           </video>
         </div>
-      </div>
 
-      <!-- Quiz -->
-      <div v-if="lesson.type === 'quiz' && lesson.quiz_data" class="card mb-4 bg-light">
-        <div class="card-body">
-          <h2 class="h4 mb-4">Тест</h2>
-          <div class="quiz-questions">
-            <div v-for="(question, index) in lesson.quiz_data.questions" :key="index" class="mb-4 pb-4 border-bottom">
-              <p class="fw-bold mb-3">{{ index + 1 }}. {{ question.text }}</p>
-              <div class="options">
-                <div class="form-check mb-2" v-for="option in question.options" :key="option">
-                  <input class="form-check-input" type="radio" :name="`question-${index}`" 
-                         :value="option" v-model="answers[index]" id="option-{{ index }}-{{ option }}">
-                  <label class="form-check-label" :for="`option-${index}-${option}`">
-                    {{ option }}
-                  </label>
-                </div>
+        <!-- Quiz -->
+        <div v-if="lesson.type === 'quiz' && lesson.quiz_data" class="card shadow-sm mb-4">
+          <div class="card-body p-4">
+            <h2 class="h4 mb-4">Тест</h2>
+            <fieldset v-for="(question, index) in lesson.quiz_data.questions" :key="index" class="mb-4 pb-4 border-bottom">
+              <legend class="fs-6 fw-bold mb-3">{{ index + 1 }}. {{ question.text }}</legend>
+              <div class="form-check mb-2" v-for="(option, optionIndex) in question.options" :key="option">
+                <input class="form-check-input" type="radio" :name="`question-${index}`"
+                       :value="option" v-model="answers[index]" :id="`option-${index}-${optionIndex}`">
+                <label class="form-check-label" :for="`option-${index}-${optionIndex}`">{{ option }}</label>
               </div>
+            </fieldset>
+            <button @click="submitQuiz" class="btn btn-primary" :disabled="!allAnswersSelected">
+              Проверить ответы
+            </button>
+            <div v-if="quizResult" class="alert mt-3 mb-0" :class="quizResult >= 70 ? 'alert-success' : 'alert-danger'">
+              <strong>Результат:</strong> {{ quizResult }}%
             </div>
           </div>
-          <button @click="submitQuiz" class="btn btn-primary" :disabled="!allAnswersSelected">
-            Проверить ответы
-          </button>
-          <div v-if="quizResult" class="alert mt-3" :class="quizResult >= 70 ? 'alert-success' : 'alert-danger'">
-            <strong>Результат:</strong> {{ quizResult }}%
+        </div>
+
+        <!-- JavaScript challenge, graded in the browser -->
+        <JsChallenge
+          v-if="lesson.type === 'code_challenge' && lesson.code_challenge_data?.language === 'javascript'"
+          :lesson-id="lesson.id"
+          :challenge="lesson.code_challenge_data"
+          @passed="onChallengePassed"
+        />
+
+        <!-- Code Challenge without automatic grading -->
+        <div v-else-if="lesson.type === 'code_challenge' && lesson.code_challenge_data" class="card shadow-sm mb-4">
+          <div class="card-body p-4">
+            <h2 class="h4 mb-3">Ваше решение</h2>
+            <div class="mb-3" v-html="lesson.code_challenge_data.task"></div>
+            <div class="mb-3">
+              <label for="code" class="visually-hidden">Код решения</label>
+              <textarea id="code" v-model="code" placeholder="Введите ваш код здесь..."
+                        class="form-control font-monospace" rows="10"></textarea>
+            </div>
+            <button @click="submitCode" class="btn btn-primary" :disabled="!code.trim()">
+              Отправить решение
+            </button>
+            <div v-if="codeResult" class="alert mt-3 mb-0" :class="codeResult.includes('✅') ? 'alert-success' : 'alert-danger'">
+              {{ codeResult }}
+            </div>
           </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="text-center mt-4">
+          <button @click="markAsComplete" class="btn btn-success btn-lg" :disabled="isCompleted">
+            <span v-if="isCompleted">✓ Пройдено</span>
+            <span v-else>Отметить как пройденное</span>
+          </button>
         </div>
       </div>
 
-      <!-- Code Challenge -->
-      <div v-if="lesson.type === 'code_challenge' && lesson.code_challenge_data" class="card mb-4 bg-light">
-        <div class="card-body">
-          <h2 class="h4 mb-4">Практическое задание</h2>
-          <div class="mb-3" v-html="lesson.code_challenge_data.task"></div>
-          <div class="mb-3">
-            <textarea v-model="code" placeholder="Введите ваш код здесь..." 
-                      class="form-control font-monospace" rows="8"></textarea>
-          </div>
-          <button @click="submitCode" class="btn btn-primary" :disabled="!code.trim()">
-            Проверить код
-          </button>
-          <div v-if="codeResult" class="alert mt-3" :class="codeResult.includes('✅') ? 'alert-success' : 'alert-danger'">
-            {{ codeResult }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="text-center mt-4">
-        <button @click="markAsComplete" class="btn btn-success btn-lg" :disabled="isCompleted">
-          <span v-if="isCompleted">✓ Пройдено</span>
-          <span v-else>Отметить как пройденное</span>
-        </button>
-      </div>
+      <div v-else class="alert alert-warning">Урок не найден.</div>
     </div>
   </div>
 </template>
 
 <script>
-import { onMounted, computed, ref } from 'vue';
+import { onMounted, computed, ref, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
-import { marked } from 'marked';
+import { renderMarkdown } from '@/utils/markdown';
+import { lessonTypeBadgeClass, lessonTypeLabel } from '@/utils/badges';
+import { coursesAPI } from '@/api';
 import { useAuthStore } from '@/stores/auth';
 import { useProgressStore } from '@/stores/progress';
 
 export default {
   name: 'Lesson',
+  components: {
+    // Loaded only on challenge lessons: the code editor is the heaviest dependency
+    JsChallenge: defineAsyncComponent(() => import('@/components/JsChallenge.vue'))
+  },
   setup() {
     const route = useRoute();
     const auth = useAuthStore();
@@ -110,7 +129,7 @@ export default {
 
     const renderedContent = computed(() => {
       if (!lesson.value?.content) return '';
-      return marked(lesson.value.content);
+      return renderMarkdown(lesson.value.content);
     });
 
     const allAnswersSelected = computed(() => {
@@ -118,37 +137,10 @@ export default {
       return lesson.value.quiz_data.questions.every((_, i) => answers.value[i] !== undefined);
     });
 
-    const getLessonTypeLabel = (type) => {
-      const labels = {
-        text: '📄 Текст',
-        video: '🎥 Видео',
-        quiz: '❓ Тест',
-        code_challenge: '💻 Практика'
-      };
-      return labels[type] || type;
-    };
-
-    const lessonTypeBadgeClass = (type) => {
-      const classes = {
-        text: 'bg-info',
-        video: 'bg-danger',
-        quiz: 'bg-warning text-dark',
-        code_challenge: 'bg-success'
-      };
-      return classes[type] || 'bg-secondary';
-    };
-
     const loadLesson = async () => {
       try {
-        const response = await fetch(`/api/courses/${route.params.id}`);
-        const data = await response.json();
-        for (const module of data.modules) {
-          const found = module.lessons.find(l => l.id === parseInt(route.params.id));
-          if (found) {
-            lesson.value = found;
-            break;
-          }
-        }
+        const { data } = await coursesAPI.getLesson(route.params.id);
+        lesson.value = data;
       } catch (error) {
         console.error('Failed to load lesson:', error);
       } finally {
@@ -195,52 +187,27 @@ export default {
       }
     };
 
+    const onChallengePassed = async (submission) => {
+      isCompleted.value = true;
+      if (!auth.isAuthenticated) return;
+      try {
+        await progressStore.updateLessonProgress(lesson.value.id, {
+          is_completed: true,
+          code_submission: submission
+        });
+      } catch (error) {
+        console.error('Failed to save challenge result:', error);
+      }
+    };
+
     onMounted(() => { loadLesson(); });
 
     return {
-      lesson, loading, isCompleted, renderedContent, getLessonTypeLabel,
+      lesson, loading, isCompleted, renderedContent, lessonTypeLabel,
       markAsComplete, answers, allAnswersSelected, quizResult, submitQuiz,
-      code, codeResult, submitCode, auth, lessonTypeBadgeClass
+      code, codeResult, submitCode, auth, lessonTypeBadgeClass, onChallengePassed
     };
   }
 };
 </script>
 
-<style scoped>
-.lesson-content :deep(h2) {
-  color: #16213e;
-  margin-top: 2rem;
-}
-
-.lesson-content :deep(h3) {
-  color: #16213e;
-  margin-top: 1.5rem;
-}
-
-.lesson-content :deep(code) {
-  background: #f4f4f4;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  font-family: monospace;
-}
-
-.lesson-content :deep(pre) {
-  background: #1a1a2e;
-  color: #e0e0e0;
-  padding: 1.5rem;
-  border-radius: 8px;
-  overflow-x: auto;
-}
-
-.lesson-content :deep(p) {
-  line-height: 1.8;
-}
-
-.lesson-content :deep(ul), .lesson-content :deep(ol) {
-  padding-left: 1.5rem;
-}
-
-.lesson-content :deep(li) {
-  margin-bottom: 0.5rem;
-}
-</style>

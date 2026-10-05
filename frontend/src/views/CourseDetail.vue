@@ -4,53 +4,47 @@
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Загрузка...</span>
       </div>
-      <p class="mt-3 text-muted">Загрузка курса...</p>
+      <p class="mt-3 text-body-secondary">Загрузка курса...</p>
     </div>
 
     <div v-else-if="coursesStore.error" class="alert alert-danger">
       {{ coursesStore.error.error || 'Ошибка загрузки курса' }}
     </div>
 
-    <div v-else-if="course" class="course-detail">
+    <div v-else-if="course">
       <!-- Course Header -->
       <div class="mb-4">
         <h1 class="display-6 fw-bold mb-3">{{ course.title }}</h1>
         <div class="mb-3">
           <span class="badge me-2" :class="levelBadgeClass(course.level)">{{ levelLabel(course.level) }}</span>
-          <span class="badge bg-secondary">⏱ {{ course.duration_hours }} часов</span>
+          <span class="badge text-bg-secondary">⏱ {{ course.duration_hours }} ч</span>
         </div>
-        <p class="lead text-muted">{{ course.description }}</p>
+        <p class="lead text-body-secondary">{{ course.description }}</p>
       </div>
 
       <!-- Progress Overview -->
-      <div v-if="courseProgress" class="card mb-4 bg-light">
+      <div v-if="courseProgress" class="card mb-4">
         <div class="card-body">
           <h5 class="card-title mb-3">Ваш прогресс</h5>
-          <div class="progress" style="height: 25px;">
-            <div class="progress-bar bg-success" role="progressbar" 
-                 :style="{ width: courseProgress.completion_percentage + '%' }"
-                 :aria-valuenow="courseProgress.completion_percentage" 
-                 aria-valuemin="0" aria-valuemax="100">
+          <div class="progress" role="progressbar" :aria-valuenow="courseProgress.completion_percentage"
+               aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar bg-success" :style="{ width: courseProgress.completion_percentage + '%' }">
               {{ courseProgress.completion_percentage }}%
             </div>
           </div>
-          <p class="mt-2 small text-muted">
+          <p class="mt-2 mb-0 small text-body-secondary">
             {{ courseProgress.completed_lessons }} / {{ courseProgress.total_lessons }} уроков пройдено
           </p>
         </div>
       </div>
 
       <!-- Modules List -->
-      <div class="modules-list">
+      <div>
         <div v-for="module in course.modules" :key="module.id" class="card mb-4 shadow-sm">
-          <div class="card-header bg-white">
-            <h2 class="h5 mb-0 d-flex align-items-center">
-              <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" 
-                    style="width: 35px; height: 35px;">{{ module.order_index }}</span>
-              {{ module.title }}
-            </h2>
+          <div class="card-header">
+            <h2 class="h5 mb-0">{{ module.title }}</h2>
           </div>
-          <div class="card-body p-0">
+          <div class="list-group list-group-flush">
             <router-link
               v-for="lesson in module.lessons"
               :key="lesson.id"
@@ -59,10 +53,10 @@
               :class="{ 'list-group-item-success': isLessonCompleted(lesson.id) }"
             >
               <div class="d-flex align-items-center gap-3">
-                <span class="badge" :class="lessonTypeBadgeClass(lesson.type)">{{ getLessonTypeLabel(lesson.type) }}</span>
+                <span class="badge" :class="lessonTypeBadgeClass(lesson.type)">{{ lessonTypeLabel(lesson.type) }}</span>
                 <span>{{ lesson.title }}</span>
               </div>
-              <span class="text-primary">→</span>
+              <span class="text-primary" aria-hidden="true">→</span>
             </router-link>
           </div>
         </div>
@@ -76,6 +70,7 @@ import { onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCoursesStore } from '@/stores/courses';
 import { useAuthStore } from '@/stores/auth';
+import { levelBadgeClass, levelLabel, lessonTypeBadgeClass, lessonTypeLabel } from '@/utils/badges';
 
 export default {
   name: 'CourseDetail',
@@ -90,44 +85,6 @@ export default {
     const isLessonCompleted = (lessonId) => {
       if (!auth.isAuthenticated) return false;
       return false;
-    };
-
-    const getLessonTypeLabel = (type) => {
-      const labels = {
-        text: '📄 Текст',
-        video: '🎥 Видео',
-        quiz: '❓ Тест',
-        code_challenge: '💻 Код'
-      };
-      return labels[type] || type;
-    };
-
-    const lessonTypeBadgeClass = (type) => {
-      const classes = {
-        text: 'bg-info',
-        video: 'bg-danger',
-        quiz: 'bg-warning text-dark',
-        code_challenge: 'bg-success'
-      };
-      return classes[type] || 'bg-secondary';
-    };
-
-    const levelBadgeClass = (level) => {
-      const classes = {
-        beginner: 'bg-success',
-        intermediate: 'bg-warning text-dark',
-        advanced: 'bg-danger'
-      };
-      return classes[level] || 'bg-secondary';
-    };
-
-    const levelLabel = (level) => {
-      const labels = {
-        beginner: 'Начинающий',
-        intermediate: 'Средний',
-        advanced: 'Продвинутый'
-      };
-      return labels[level] || level;
     };
 
     const loadCourse = async () => {
@@ -147,7 +104,7 @@ export default {
       courseProgress,
       coursesStore,
       isLessonCompleted,
-      getLessonTypeLabel,
+      lessonTypeLabel,
       lessonTypeBadgeClass,
       levelBadgeClass,
       levelLabel,

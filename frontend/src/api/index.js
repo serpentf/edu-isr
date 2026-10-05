@@ -46,6 +46,7 @@ export const coursesAPI = {
   getAll: (params) => api.get('/courses', { params }),
   getById: (id) => api.get(`/courses/${id}`),
   getBySlug: (slug) => api.get(`/courses/slug/${slug}`),
+  getLesson: (lessonId) => api.get(`/courses/lessons/${lessonId}`),
   create: (data) => api.post('/courses', data),
   update: (id, data) => api.put(`/courses/${id}`, data),
   delete: (id) => api.delete(`/courses/${id}`)

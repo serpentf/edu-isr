@@ -2,62 +2,66 @@
   <div>
     <h1 class="h3 mb-4">{{ isEdit ? 'Редактировать' : 'Создать' }} курс</h1>
 
-    <div class="card shadow-sm" style="max-width: 700px;">
-      <div class="card-body p-4">
-        <form @submit.prevent="handleSubmit">
-          <div class="mb-3">
-            <label for="title" class="form-label">Название курса</label>
-            <input id="title" v-model="form.title" type="text" class="form-control" required placeholder="Введите название" />
-          </div>
-
-          <div class="mb-3">
-            <label for="description" class="form-label">Описание</label>
-            <textarea id="description" v-model="form.description" class="form-control" required placeholder="Описание курса" rows="4"></textarea>
-          </div>
-
-          <div class="mb-3">
-            <label for="slug" class="form-label">URL-адрес (slug)</label>
-            <input id="slug" v-model="form.slug" type="text" class="form-control" required placeholder="my-awesome-course" />
-            <small class="form-text text-muted">Уникальный URL-адрес для курса</small>
-          </div>
-
-          <div class="mb-3">
-            <label for="image" class="form-label">URL изображения</label>
-            <input id="image" v-model="form.image" type="url" class="form-control" placeholder="https://example.com/image.jpg" />
-          </div>
-
-          <div class="row g-3 mb-3">
-            <div class="col-md-4">
-              <label for="level" class="form-label">Уровень</label>
-              <select id="level" v-model="form.level" class="form-select" required>
-                <option value="beginner">Начинающий</option>
-                <option value="intermediate">Средний</option>
-                <option value="advanced">Продвинутый</option>
-              </select>
-            </div>
-
-            <div class="col-md-4">
-              <label for="duration_hours" class="form-label">Длительность (часы)</label>
-              <input id="duration_hours" v-model.number="form.duration_hours" type="number" class="form-control" step="0.5" min="0" required />
-            </div>
-
-            <div class="col-md-4 d-flex align-items-end">
-              <div class="form-check mb-2">
-                <input type="checkbox" v-model="form.is_published" class="form-check-input" id="is_published">
-                <label class="form-check-label" for="is_published">Опубликовать</label>
+    <div class="row">
+      <div class="col-lg-8 col-xl-7">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <form @submit.prevent="handleSubmit">
+              <div class="mb-3">
+                <label for="title" class="form-label">Название курса</label>
+                <input id="title" v-model="form.title" type="text" class="form-control" required placeholder="Введите название" />
               </div>
-            </div>
-          </div>
 
-          <div v-if="error" class="alert alert-danger" role="alert">{{ error }}</div>
+              <div class="mb-3">
+                <label for="description" class="form-label">Описание</label>
+                <textarea id="description" v-model="form.description" class="form-control" required placeholder="Описание курса" rows="4"></textarea>
+              </div>
 
-          <div class="d-flex gap-2 mt-4">
-            <button type="submit" class="btn btn-primary" :disabled="loading">
-              {{ loading ? 'Сохранение...' : (isEdit ? 'Сохранить изменения' : 'Создать курс') }}
-            </button>
-            <router-link to="/admin/courses" class="btn btn-secondary">Отмена</router-link>
+              <div class="mb-3">
+                <label for="slug" class="form-label">URL-адрес (slug)</label>
+                <input id="slug" v-model="form.slug" type="text" class="form-control" required placeholder="my-awesome-course" />
+                <div class="form-text">Уникальный URL-адрес для курса</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="image" class="form-label">URL изображения</label>
+                <input id="image" v-model="form.image" type="url" class="form-control" placeholder="https://example.com/image.jpg" />
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <label for="level" class="form-label">Уровень</label>
+                  <select id="level" v-model="form.level" class="form-select" required>
+                    <option value="beginner">Начинающий</option>
+                    <option value="intermediate">Средний</option>
+                    <option value="advanced">Продвинутый</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label for="duration_hours" class="form-label">Длительность (часы)</label>
+                  <input id="duration_hours" v-model.number="form.duration_hours" type="number" class="form-control" step="0.5" min="0" required />
+                </div>
+
+                <div class="col-md-4 d-flex align-items-end">
+                  <div class="form-check mb-2">
+                    <input type="checkbox" v-model="form.is_published" class="form-check-input" id="is_published">
+                    <label class="form-check-label" for="is_published">Опубликовать</label>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="error" class="alert alert-danger" role="alert">{{ error }}</div>
+
+              <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary" :disabled="loading">
+                  {{ loading ? 'Сохранение...' : (isEdit ? 'Сохранить изменения' : 'Создать курс') }}
+                </button>
+                <router-link to="/admin/courses" class="btn btn-secondary">Отмена</router-link>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>
@@ -94,8 +98,7 @@ export default {
       if (!isEdit.value) return;
 
       try {
-        const response = await fetch(`/api/courses/${courseId.value}`);
-        const course = await response.json();
+        const { data: course } = await coursesAPI.getById(courseId.value);
 
         form.value = {
           title: course.title,

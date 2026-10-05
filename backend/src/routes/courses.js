@@ -4,6 +4,7 @@ const {
   getCourses,
   getCourseById,
   getCourseBySlug,
+  getLessonById,
   createCourse,
   updateCourse,
   deleteCourse
@@ -13,6 +14,7 @@ const { authenticateToken, authorizeRole } = require('../middleware/auth');
 // Public routes
 router.get('/', getCourses);
 router.get('/slug/:slug', getCourseBySlug);
+router.get('/lessons/:lessonId', getLessonById);
 
 // Protected routes
 router.get('/:id', getCourseById);

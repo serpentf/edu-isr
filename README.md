@@ -12,6 +12,7 @@
 
 ### Frontend
 - **Vue 3** — фронтенд-фреймворк (Composition API)
+- **Bootstrap 5.3** — вся вёрстка, без собственного CSS (правила: `.claude/skills/bootstrap-ui/SKILL.md`)
 - **Vite** — сборщик
 - **Vue Router** — роутинг
 - **Pinia** — управление состоянием
@@ -70,6 +71,7 @@ edu-isr/
 - `GET /` — список курсов
 - `GET /slug/:slug` — курс по URL
 - `GET /:id` — курс по ID
+- `GET /lessons/:lessonId` — урок с модулем и курсом
 - `POST /` — создать курс (админ)
 - `PUT /:id` — обновить курс (админ)
 - `DELETE /:id` — удалить курс (админ)
