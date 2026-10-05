@@ -12,8 +12,6 @@ Module.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
 
 Module.hasMany(Lesson, { foreignKey: 'module_id', as: 'lessons', order: [['order_index', 'ASC']]});
 Lesson.belongsTo(Module, { foreignKey: 'module_id', as: 'module' });
-
-User.hasMany(UserProgress, { foreignKey: 'user_id', as: 'progress' });
 UserProgress.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 UserProgress.belongsTo(Lesson, { foreignKey: 'lesson_id', as: 'lesson' });
 

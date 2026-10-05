@@ -1,8 +1,10 @@
 <template>
   <div id="app">
     <Navbar v-if="showNavbar" />
-    <main class="main-content">
-      <router-view />
+    <main class="py-4">
+      <div class="container">
+        <router-view />
+      </div>
     </main>
     <Footer v-if="showFooter" />
   </div>
@@ -30,19 +32,3 @@ export default {
   }
 };
 </script>
-
-<style>
-#app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.main-content {
-  flex: 1;
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-}
-</style>

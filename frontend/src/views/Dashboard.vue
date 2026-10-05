@@ -1,48 +1,73 @@
 <template>
-  <div class="dashboard">
-    <h1>Мой прогресс</h1>
+  <div>
+    <h1 class="mb-4">Мой прогресс</h1>
 
     <div v-if="auth.isAuthenticated" class="dashboard-content">
-      <div class="welcome-banner">
-        <h2>Привет, {{ auth.user.name }}! 👋</h2>
-        <p>Следите за своим прогрессом обучения</p>
+      <!-- Welcome Banner -->
+      <div class="alert alert-primary alert-dismissible fade show mb-4" role="alert">
+        <h2 class="h4 mb-0">Привет, {{ auth.user.name }}! 👋</h2>
+        <p class="mb-0 mt-1">Следите за своим прогрессом обучения</p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon">📚</div>
-          <div class="stat-info">
-            <span class="stat-value">{{ allProgress.length }}</span>
-            <span class="stat-label">Всего уроков</span>
+      <!-- Stats Grid -->
+      <div class="row g-4 mb-4">
+        <div class="col-md-4">
+          <div class="card text-center shadow-sm h-100">
+            <div class="card-body">
+              <div class="display-6 mb-2">📚</div>
+              <h3 class="h2 fw-bold">{{ allProgress.length }}</h3>
+              <p class="text-muted mb-0">Всего уроков</p>
+            </div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon">✅</div>
-          <div class="stat-info">
-            <span class="stat-value">{{ completedCount }}</span>
-            <span class="stat-label">Пройдено</span>
+        <div class="col-md-4">
+          <div class="card text-center shadow-sm h-100">
+            <div class="card-body">
+              <div class="display-6 mb-2">✅</div>
+              <h3 class="h2 fw-bold text-success">{{ completedCount }}</h3>
+              <p class="text-muted mb-0">Пройдено</p>
+            </div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon">📊</div>
-          <div class="stat-info">
-            <span class="stat-value">{{ completionRate }}%</span>
-            <span class="stat-label">Прогресс</span>
+        <div class="col-md-4">
+          <div class="card text-center shadow-sm h-100">
+            <div class="card-body">
+              <div class="display-6 mb-2">📊</div>
+              <h3 class="h2 fw-bold text-primary">{{ completionRate }}%</h3>
+              <p class="text-muted mb-0">Прогресс</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="my-courses">
-        <h3>Мои курсы</h3>
-        <div class="courses-list">
-          <div v-for="item in groupedCourses" :key="item.courseId" class="course-progress-item">
-            <router-link :to="`/course/${item.courseSlug}`" class="course-link">
-              <h4>{{ item.courseTitle }}</h4>
-              <div class="progress-bar-container">
-                <div class="progress-bar" :style="{ width: item.completionPercentage + '%' }"></div>
-              </div>
-              <span class="completion-text">{{ item.completedLessons }} / {{ item.totalLessons }} уроков ({{ item.completionPercentage }}%)</span>
-            </router-link>
+      <!-- My Courses -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h3 class="h5 mb-0">Мои курсы</h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6" v-for="item in groupedCourses" :key="item.courseId">
+              <router-link :to="`/course/${item.courseSlug}`" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm">
+                  <div class="card-body">
+                    <h5 class="card-title mb-2">{{ item.courseTitle }}</h5>
+                    <div class="progress mb-2" style="height: 10px;">
+                      <div class="progress-bar bg-success" role="progressbar" 
+                           :style="{ width: item.completionPercentage + '%' }"
+                           :aria-valuenow="item.completionPercentage" 
+                           aria-valuemin="0" aria-valuemax="100">
+                      </div>
+                    </div>
+                    <small class="text-muted">{{ item.completedLessons }} / {{ item.totalLessons }} уроков ({{ item.completionPercentage }}%)</small>
+                  </div>
+                </div>
+              </router-link>
+            </div>
+            <div v-if="groupedCourses.length === 0" class="col-12">
+              <p class="text-muted">Вы ещё не начали ни одного курса.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -128,111 +153,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.dashboard h1 {
-  color: #16213e;
-  margin-bottom: 2rem;
-}
-
-.welcome-banner {
-  background: linear-gradient(135deg, #4ecca3, #2d8f6f);
-  color: white;
-  padding: 2rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-}
-
-.welcome-banner h2 {
-  margin: 0 0 0.5rem 0;
-}
-
-.welcome-banner p {
-  opacity: 0.9;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.stat-icon {
-  font-size: 2.5rem;
-}
-
-.stat-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #16213e;
-}
-
-.stat-label {
-  color: #888;
-  font-size: 0.9rem;
-}
-
-.my-courses h3 {
-  color: #16213e;
-  margin-bottom: 1rem;
-}
-
-.courses-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.course-progress-item {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-}
-
-.course-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-
-.course-link h4 {
-  color: #16213e;
-  margin-bottom: 0.75rem;
-}
-
-.progress-bar-container {
-  background: #e9ecef;
-  border-radius: 10px;
-  height: 12px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.progress-bar {
-  background: linear-gradient(90deg, #4ecca3, #3db892);
-  height: 100%;
-  transition: width 0.3s;
-}
-
-.completion-text {
-  color: #666;
-  font-size: 0.85rem;
-}
-</style>

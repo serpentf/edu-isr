@@ -1,26 +1,50 @@
 <template>
-  <nav class="navbar">
-    <div class="nav-container">
-      <router-link to="/" class="nav-logo">📚 Edu ISR</router-link>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <router-link to="/" class="navbar-brand fw-bold">📚 Edu ISR</router-link>
 
-      <div class="nav-links">
-        <router-link to="/courses">Курсы</router-link>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
-        <template v-if="auth.isAuthenticated">
-          <router-link to="/dashboard">Мой прогресс</router-link>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <router-link to="/courses" class="nav-link">Курсы</router-link>
+          </li>
 
-          <template v-if="auth.isAdmin">
-            <router-link to="/admin/courses" class="admin-link">Админ-панель</router-link>
+          <template v-if="auth.isAuthenticated">
+            <li class="nav-item">
+              <router-link to="/dashboard" class="nav-link">Мой прогресс</router-link>
+            </li>
+
+            <template v-if="auth.isAdmin">
+              <li class="nav-item">
+                <router-link to="/admin/courses" class="nav-link text-warning">Админ-панель</router-link>
+              </li>
+            </template>
+          </template>
+        </ul>
+
+        <ul class="navbar-nav">
+          <template v-if="auth.isAuthenticated">
+            <li class="nav-item">
+              <span class="nav-link text-light">{{ auth.user?.name }}</span>
+            </li>
+            <li class="nav-item">
+              <button @click="auth.logout()" class="btn btn-outline-danger btn-sm">Выход</button>
+            </li>
           </template>
 
-          <span class="user-name">{{ auth.user?.name }}</span>
-          <button @click="auth.logout()" class="btn-logout">Выход</button>
-        </template>
-
-        <template v-else>
-          <router-link to="/login" class="btn-login">Войти</router-link>
-          <router-link to="/register" class="btn-register">Регистрация</router-link>
-        </template>
+          <template v-else>
+            <li class="nav-item me-2">
+              <router-link to="/login" class="btn btn-outline-light btn-sm">Войти</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link to="/register" class="btn btn-success btn-sm">Регистрация</router-link>
+            </li>
+          </template>
+        </ul>
       </div>
     </div>
   </nav>
@@ -37,97 +61,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.navbar {
-  background: #1a1a2e;
-  color: white;
-  padding: 1rem 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.nav-logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: white;
-  text-decoration: none;
-}
-
-.nav-links {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-}
-
-.nav-links a {
-  color: #a0a0c0;
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-.nav-links a:hover,
-.nav-links a.router-link-active {
-  color: white;
-}
-
-.admin-link {
-  color: #ff6b6b !important;
-}
-
-.user-name {
-  color: #a0a0c0;
-  font-size: 0.9rem;
-}
-
-.btn-logout,
-.btn-login,
-.btn-register {
-  padding: 0.5rem 1rem;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s;
-}
-
-.btn-logout {
-  background: transparent;
-  color: #ff6b6b;
-  border: 1px solid #ff6b6b;
-}
-
-.btn-logout:hover {
-  background: #ff6b6b;
-  color: white;
-}
-
-.btn-login {
-  background: transparent;
-  color: white;
-  border: 1px solid #4ecca3;
-}
-
-.btn-login:hover {
-  background: #4ecca3;
-}
-
-.btn-register {
-  background: #4ecca3;
-  color: white;
-}
-
-.btn-register:hover {
-  background: #3db892;
-}
-</style>

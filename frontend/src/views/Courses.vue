@@ -1,37 +1,45 @@
 <template>
-  <div class="courses-page">
-    <h1>Каталог курсов</h1>
+  <div>
+    <h1 class="mb-4">Каталог курсов</h1>
 
-    <div v-if="coursesStore.loading" class="loading">Загрузка...</div>
+    <div v-if="coursesStore.loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Загрузка...</span>
+      </div>
+      <p class="mt-3 text-muted">Загрузка...</p>
+    </div>
 
-    <div v-else-if="coursesStore.error" class="error">
+    <div v-else-if="coursesStore.error" class="alert alert-danger">
       {{ coursesStore.error.error || 'Ошибка загрузки' }}
     </div>
 
-    <div v-else class="courses-grid">
-      <div
-        v-for="course in coursesStore.publishedCourses"
-        :key="course.id"
-        class="course-card"
-      >
-        <router-link :to="`/course/${course.slug}`" class="course-link">
-          <div class="course-image" v-if="course.image">
-            <img :src="course.image" :alt="course.title" />
+    <div v-else class="row g-4">
+      <div class="col-md-6 col-lg-4" v-for="course in coursesStore.publishedCourses" :key="course.id">
+        <div class="card h-100 shadow-sm hover-shadow">
+          <div v-if="course.image" class="card-img-top overflow-hidden" style="height: 200px;">
+            <img :src="course.image" :alt="course.title" class="img-fluid w-100" style="object-fit: cover;">
           </div>
-          <div class="course-content">
-            <span class="course-level" :class="course.level">{{ course.level }}</span>
-            <h2>{{ course.title }}</h2>
-            <p>{{ course.description }}</p>
-            <div class="course-meta">
-              <span>⏱ {{ course.duration_hours }} часов</span>
+          <div class="card-body d-flex flex-column">
+            <div class="mb-2">
+              <span class="badge" :class="levelBadgeClass(course.level)">{{ levelLabel(course.level) }}</span>
+            </div>
+            <h5 class="card-title">{{ course.title }}</h5>
+            <p class="card-text text-muted flex-grow-1">{{ course.description }}</p>
+            <div class="text-muted small mt-3">
+              <span class="me-3">⏱ {{ course.duration_hours }} часов</span>
               <span>📚 {{ course.modules?.length || 0 }} модулей</span>
             </div>
           </div>
-        </router-link>
+          <div class="card-footer bg-transparent border-top-0 pb-3">
+            <router-link :to="`/course/${course.slug}`" class="btn btn-primary w-100">Подробнее</router-link>
+          </div>
+        </div>
       </div>
 
-      <div v-if="coursesStore.publishedCourses.length === 0" class="empty-state">
-        <p>Курсы пока не добавлены. Загляните позже!</p>
+      <div v-if="coursesStore.publishedCourses.length === 0" class="col-12">
+        <div class="alert alert-info text-center">
+          Курсы пока не добавлены. Загляните позже!
+        </div>
       </div>
     </div>
   </div>
@@ -50,93 +58,33 @@ export default {
       coursesStore.fetchAll(true);
     });
 
-    return { coursesStore };
+    const levelBadgeClass = (level) => {
+      const classes = {
+        beginner: 'bg-success',
+        intermediate: 'bg-warning text-dark',
+        advanced: 'bg-danger'
+      };
+      return classes[level] || 'bg-secondary';
+    };
+
+    const levelLabel = (level) => {
+      const labels = {
+        beginner: 'Начинающий',
+        intermediate: 'Средний',
+        advanced: 'Продвинутый'
+      };
+      return labels[level] || level;
+    };
+
+    return { coursesStore, levelBadgeClass, levelLabel };
   }
 };
 </script>
 
 <style scoped>
-.courses-page h1 {
-  color: #16213e;
-  margin-bottom: 2rem;
+.hover-shadow:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-2px);
+  transition: all 0.2s ease-in-out;
 }
-
-.courses-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 2rem;
-}
-
-.course-card {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.course-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.course-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-
-.course-image {
-  height: 180px;
-  overflow: hidden;
-}
-
-.course-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.course-content {
-  padding: 1.5rem;
-}
-
-.course-level {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.course-level.beginner { background: #d4edda; color: #155724; }
-.course-level.intermediate { background: #fff3cd; color: #856404; }
-.course-level.advanced { background: #f8d7da; color: #721c24; }
-
-.course-content h2 {
-  color: #16213e;
-  margin: 0.75rem 0;
-}
-
-.course-content p {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.course-meta {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-  color: #888;
-  font-size: 0.85rem;
-}
-
-.loading, .error, .empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
-}
-
-.error { color: #ff6b6b; }
 </style>

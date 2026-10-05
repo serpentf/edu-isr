@@ -1,31 +1,53 @@
 <template>
-  <div class="home">
-    <section class="hero">
-      <h1>Интерактивные курсы по инструментам разработки</h1>
-      <p>Изучайте современные инструменты и технологии программирования на практике</p>
-      <router-link to="/courses" class="btn-primary">Смотреть курсы</router-link>
+  <div>
+    <!-- Hero Section -->
+    <section class="bg-primary text-white text-center py-5 mb-5">
+      <div class="container">
+        <h1 class="display-4 fw-bold mb-3">Интерактивные курсы по инструментам разработки</h1>
+        <p class="lead mb-4">Изучайте современные инструменты и технологии программирования на практике</p>
+        <router-link to="/courses" class="btn btn-light btn-lg px-5">Смотреть курсы</router-link>
+      </div>
     </section>
 
-    <section class="features">
-      <div class="feature-card">
-        <div class="feature-icon">📖</div>
-        <h3>Пошаговые уроки</h3>
-        <p>Структурированные материалы от простого к сложному</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">💻</div>
-        <h3>Практические задания</h3>
-        <p>Код-челленджи и интерактивные тесты</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Отслеживание прогресса</h3>
-        <p>Следите за своими достижениями</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🏆</div>
-        <h3>Сертификаты</h3>
-        <p>Получайте сертификаты после прохождения</p>
+    <!-- Features Section -->
+    <section class="mb-5">
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+          <div class="card h-100 text-center shadow-sm">
+            <div class="card-body">
+              <div class="display-4 mb-3">📖</div>
+              <h5 class="card-title">Пошаговые уроки</h5>
+              <p class="card-text text-muted">Структурированные материалы от простого к сложному</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="card h-100 text-center shadow-sm">
+            <div class="card-body">
+              <div class="display-4 mb-3">💻</div>
+              <h5 class="card-title">Практические задания</h5>
+              <p class="card-text text-muted">Код-челленджи и интерактивные тесты</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="card h-100 text-center shadow-sm">
+            <div class="card-body">
+              <div class="display-4 mb-3">📊</div>
+              <h5 class="card-title">Отслеживание прогресса</h5>
+              <p class="card-text text-muted">Следите за своими достижениями</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="card h-100 text-center shadow-sm">
+            <div class="card-body">
+              <div class="display-4 mb-3">🏆</div>
+              <h5 class="card-title">Сертификаты</h5>
+              <p class="card-text text-muted">Получайте сертификаты после прохождения</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -36,73 +58,3 @@ export default {
   name: 'Home'
 };
 </script>
-
-<style scoped>
-.hero {
-  text-align: center;
-  padding: 4rem 2rem;
-}
-
-.hero h1 {
-  font-size: 2.5rem;
-  color: #16213e;
-  margin-bottom: 1rem;
-}
-
-.hero p {
-  font-size: 1.2rem;
-  color: #666;
-  margin-bottom: 2rem;
-}
-
-.btn-primary {
-  display: inline-block;
-  background: #4ecca3;
-  color: white;
-  padding: 1rem 2rem;
-  border-radius: 8px;
-  text-decoration: none;
-  font-size: 1.1rem;
-  transition: background 0.3s;
-}
-
-.btn-primary:hover {
-  background: #3db892;
-}
-
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-  padding: 2rem;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.feature-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  transition: transform 0.3s;
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-}
-
-.feature-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.feature-card h3 {
-  color: #16213e;
-  margin-bottom: 0.5rem;
-}
-
-.feature-card p {
-  color: #666;
-}
-</style>
