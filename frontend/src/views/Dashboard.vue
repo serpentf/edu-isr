@@ -5,7 +5,7 @@
     <div v-if="auth.isAuthenticated">
       <!-- Welcome Banner -->
       <div class="alert alert-primary alert-dismissible fade show mb-4" role="alert">
-        <h2 class="h4 mb-0">Привет, {{ auth.user.name }}! 👋</h2>
+        <h2 class="h4 mb-0">Привет, {{ auth.user.name }}!</h2>
         <p class="mb-0 mt-1">Следите за своим прогрессом обучения</p>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
@@ -15,7 +15,7 @@
         <div class="col">
           <div class="card text-center shadow-sm h-100">
             <div class="card-body">
-              <div class="display-6 mb-2">📚</div>
+              <i class="bi bi-journal-bookmark d-block fs-1 text-primary mb-2" aria-hidden="true"></i>
               <h3 class="h2 fw-bold">{{ allProgress.length }}</h3>
               <p class="text-body-secondary mb-0">Всего уроков</p>
             </div>
@@ -24,7 +24,7 @@
         <div class="col">
           <div class="card text-center shadow-sm h-100">
             <div class="card-body">
-              <div class="display-6 mb-2">✅</div>
+              <i class="bi bi-check-circle d-block fs-1 text-success mb-2" aria-hidden="true"></i>
               <h3 class="h2 fw-bold text-success">{{ completedCount }}</h3>
               <p class="text-body-secondary mb-0">Пройдено</p>
             </div>
@@ -33,7 +33,7 @@
         <div class="col">
           <div class="card text-center shadow-sm h-100">
             <div class="card-body">
-              <div class="display-6 mb-2">📊</div>
+              <i class="bi bi-graph-up d-block fs-1 text-primary mb-2" aria-hidden="true"></i>
               <h3 class="h2 fw-bold text-primary">{{ completionRate }}%</h3>
               <p class="text-body-secondary mb-0">Прогресс</p>
             </div>

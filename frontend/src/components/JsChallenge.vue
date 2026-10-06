@@ -6,14 +6,14 @@
 
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
         <h2 class="h4 mb-0">Ваши тесты</h2>
-        <button type="button" class="btn btn-sm btn-outline-secondary" @click="reset">Сбросить к началу</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" @click="reset"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Сбросить к началу</button>
       </div>
       <CodeEditor v-model="code" label="Код тестов" @run="run" />
 
       <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
         <button type="button" class="btn btn-primary" :disabled="running" @click="run">
           <span v-if="running" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-          Запустить тесты
+          <i v-else class="bi bi-play-fill me-1" aria-hidden="true"></i>Запустить тесты
         </button>
         <span class="small text-body-secondary">или Ctrl+Enter (⌘+Enter)</span>
       </div>
@@ -29,7 +29,7 @@
           <div v-if="result.tests.length" class="list-group mb-3">
             <div v-for="(test, index) in result.tests" :key="index"
                  class="list-group-item" :class="test.passed ? 'list-group-item-success' : 'list-group-item-danger'">
-              <div>{{ test.passed ? '✓' : '✗' }} {{ test.name }}</div>
+              <div><i class="bi me-2" :class="test.passed ? 'bi-check-circle-fill' : 'bi-x-circle-fill'" aria-hidden="true"></i><span class="visually-hidden">{{ test.passed ? 'Прошёл:' : 'Упал:' }}</span>{{ test.name }}</div>
               <div v-if="!test.passed" class="small font-monospace">{{ test.error }}</div>
             </div>
           </div>
@@ -44,7 +44,8 @@
             <div v-for="(mutant, index) in result.mutants" :key="index"
                  class="list-group-item d-flex gap-2"
                  :class="{ 'list-group-item-success': referencePassed && mutant.caught }">
-              <span>{{ referencePassed && mutant.caught ? '✓' : '○' }}</span>
+              <i class="bi" :class="referencePassed && mutant.caught ? 'bi-check-circle-fill' : 'bi-bug'" aria-hidden="true"></i>
+              <span class="visually-hidden">{{ referencePassed && mutant.caught ? 'Пойман:' : 'Не пойман:' }}</span>
               <span>{{ mutant.hint }}</span>
             </div>
           </div>
@@ -55,7 +56,7 @@
           </div>
 
           <div v-if="passed" class="alert alert-success mb-0">
-            <strong>Задание выполнено!</strong> Ваши тесты проходят на правильном коде и ловят все баги.
+            <i class="bi bi-trophy-fill me-1" aria-hidden="true"></i><strong>Задание выполнено!</strong> Ваши тесты проходят на правильном коде и ловят все баги.
           </div>
           <div v-else class="alert alert-info mb-0">{{ nextStep }}</div>
         </template>

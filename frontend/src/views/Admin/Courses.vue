@@ -3,7 +3,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
       <h1 class="h3 mb-0">Управление курсами</h1>
       <router-link to="/admin/courses/create" class="btn btn-success">
-        + Создать курс
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Создать курс
       </router-link>
     </div>
 
@@ -42,8 +42,8 @@
               </td>
               <td>
                 <div class="btn-group btn-group-sm">
-                  <router-link :to="`/admin/courses/${course.id}/edit`" class="btn btn-outline-primary" title="Редактировать">✏️</router-link>
-                  <button @click="deleteCourse(course.id)" class="btn btn-outline-danger" title="Удалить">🗑️</button>
+                  <router-link :to="`/admin/courses/${course.id}/edit`" class="btn btn-outline-primary" title="Редактировать"><i class="bi bi-pencil" aria-hidden="true"></i><span class="visually-hidden">Редактировать</span></router-link>
+                  <button @click="deleteCourse(course.id)" class="btn btn-outline-danger" title="Удалить"><i class="bi bi-trash" aria-hidden="true"></i><span class="visually-hidden">Удалить</span></button>
                 </div>
               </td>
             </tr>

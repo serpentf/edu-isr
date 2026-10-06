@@ -13,7 +13,7 @@
         <div class="col">
           <div class="card h-100 text-center shadow-sm">
             <div class="card-body">
-              <div class="display-4 mb-3">📖</div>
+              <i class="bi bi-journal-text d-block fs-1 text-primary mb-3" aria-hidden="true"></i>
               <h2 class="h5 card-title">Пошаговые уроки</h2>
               <p class="card-text text-body-secondary">Структурированные материалы от простого к сложному</p>
             </div>
@@ -22,7 +22,7 @@
         <div class="col">
           <div class="card h-100 text-center shadow-sm">
             <div class="card-body">
-              <div class="display-4 mb-3">💻</div>
+              <i class="bi bi-code-square d-block fs-1 text-primary mb-3" aria-hidden="true"></i>
               <h2 class="h5 card-title">Практические задания</h2>
               <p class="card-text text-body-secondary">Код-челленджи и интерактивные тесты</p>
             </div>
@@ -31,7 +31,7 @@
         <div class="col">
           <div class="card h-100 text-center shadow-sm">
             <div class="card-body">
-              <div class="display-4 mb-3">📊</div>
+              <i class="bi bi-graph-up d-block fs-1 text-primary mb-3" aria-hidden="true"></i>
               <h2 class="h5 card-title">Отслеживание прогресса</h2>
               <p class="card-text text-body-secondary">Следите за своими достижениями</p>
             </div>
@@ -40,7 +40,7 @@
         <div class="col">
           <div class="card h-100 text-center shadow-sm">
             <div class="card-body">
-              <div class="display-4 mb-3">🏆</div>
+              <i class="bi bi-award d-block fs-1 text-primary mb-3" aria-hidden="true"></i>
               <h2 class="h5 card-title">Сертификаты</h2>
               <p class="card-text text-body-secondary">Получайте сертификаты после прохождения</p>
             </div>

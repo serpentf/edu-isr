@@ -17,7 +17,7 @@
         <h1 class="display-6 fw-bold mb-3">{{ course.title }}</h1>
         <div class="mb-3">
           <span class="badge me-2" :class="levelBadgeClass(course.level)">{{ levelLabel(course.level) }}</span>
-          <span class="badge text-bg-secondary">⏱ {{ course.duration_hours }} ч</span>
+          <span class="badge text-bg-secondary"><i class="bi bi-clock me-1" aria-hidden="true"></i>{{ course.duration_hours }} ч</span>
         </div>
         <p class="lead text-body-secondary">{{ course.description }}</p>
       </div>
@@ -53,10 +53,10 @@
               :class="{ 'list-group-item-success': isLessonCompleted(lesson.id) }"
             >
               <div class="d-flex align-items-center gap-3">
-                <span class="badge" :class="lessonTypeBadgeClass(lesson.type)">{{ lessonTypeLabel(lesson.type) }}</span>
+                <span class="badge" :class="lessonTypeBadgeClass(lesson.type)"><i class="bi me-1" :class="lessonTypeIcon(lesson.type)" aria-hidden="true"></i>{{ lessonTypeLabel(lesson.type) }}</span>
                 <span>{{ lesson.title }}</span>
               </div>
-              <span class="text-primary" aria-hidden="true">→</span>
+              <i class="bi bi-chevron-right text-primary" aria-hidden="true"></i>
             </router-link>
           </div>
         </div>
@@ -70,7 +70,7 @@ import { onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCoursesStore } from '@/stores/courses';
 import { useAuthStore } from '@/stores/auth';
-import { levelBadgeClass, levelLabel, lessonTypeBadgeClass, lessonTypeLabel } from '@/utils/badges';
+import { levelBadgeClass, levelLabel, lessonTypeBadgeClass, lessonTypeLabel, lessonTypeIcon } from '@/utils/badges';
 
 export default {
   name: 'CourseDetail',
@@ -105,6 +105,7 @@ export default {
       coursesStore,
       isLessonCompleted,
       lessonTypeLabel,
+      lessonTypeIcon,
       lessonTypeBadgeClass,
       levelBadgeClass,
       levelLabel,

@@ -26,8 +26,8 @@
             <h2 class="h5 card-title">{{ course.title }}</h2>
             <p class="card-text text-body-secondary flex-grow-1">{{ course.description }}</p>
             <div class="small text-body-secondary d-flex gap-3">
-              <span>⏱ {{ course.duration_hours }} ч</span>
-              <span>📚 {{ course.modules?.length || 0 }} модулей</span>
+              <span><i class="bi bi-clock me-1" aria-hidden="true"></i>{{ course.duration_hours }} ч</span>
+              <span><i class="bi bi-collection me-1" aria-hidden="true"></i>{{ course.modules?.length || 0 }} модулей</span>
             </div>
           </div>
           <div class="card-footer bg-transparent border-top-0 pb-3">

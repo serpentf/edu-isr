@@ -18,6 +18,7 @@ description: Правила вёрстки фронтенда Edu ISR — тол
 
 ```js
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.min.css';
 import 'bootstrap'; // JS-плагины: collapse, dropdown, alert, modal…
 ```
 
@@ -44,11 +45,12 @@ CDN-ссылки в `index.html` не добавлять.
 6. **Медиа:** картинки и видео фиксированной пропорции — `ratio ratio-16x9` (+ `object-fit-cover` для `img`), адаптивные картинки — `img-fluid`.
 7. **Списки ссылок** — `.list-group-item` только внутри `.list-group` (в карточке — `list-group list-group-flush`).
 8. **Интерактивность** — плагины Bootstrap через `data-bs-*`. Если нужно управлять из Vue — JS API (`import { Collapse } from 'bootstrap'`, `Collapse.getInstance(el)`), см. `components/Navbar.vue`.
-9. **Доступность:** у каждого `input` — `label` с `for` (или `visually-hidden`); группы радиокнопок — `fieldset` + `legend`; спиннеры — `role="status"` + `visually-hidden`; заголовки по порядку (размер задаётся классом `h5`, а не выбором тега).
+9. **Иконки — только Bootstrap Icons** (`bootstrap-icons`): `<i class="bi bi-clock me-1" aria-hidden="true"></i>`. Эмодзи и символы-пиктограммы (✓ ✗ → ⏱ 📚 и т.п.) в интерфейсе не используются. Размер и цвет иконки — классами Bootstrap (`fs-1`, `text-primary`). Иконки типов уроков берутся из `lessonTypeIcon()` в `src/utils/badges.js`.
+10. **Доступность:** у каждого `input` — `label` с `for` (или `visually-hidden`); группы радиокнопок — `fieldset` + `legend`; спиннеры — `role="status"` + `visually-hidden`; заголовки по порядку (размер задаётся классом `h5`, а не выбором тега); декоративные иконки — `aria-hidden="true"`, а у кнопки только с иконкой — текст в `visually-hidden`.
 
 ## Готовые части проекта
 
-- `src/utils/badges.js` — подписи и классы бейджей уровня курса и типа урока. Не дублировать эти словари в компонентах.
+- `src/utils/badges.js` — подписи, классы и иконки бейджей уровня курса и типа урока. Не дублировать эти словари в компонентах.
 - `src/utils/markdown.js` — `renderMarkdown()`: рендер Markdown уроков с классами Bootstrap (`table`, `img-fluid`, обёртка `table-responsive`, оформление `blockquote`, `pre`, `details`). Нужно стилизовать новый элемент Markdown — добавь классы в словарь `CLASSES`, а не CSS.
 
 ## Сторонние виджеты
@@ -57,7 +59,8 @@ CDN-ссылки в `index.html` не добавлять.
 
 | Задача | Библиотека | Где | Как оформлен |
 |--------|-----------|-----|--------------|
-| Подсветка кода | highlight.js (core + нужные языки) | `src/utils/highlight.js` | Готовая тема `highlight.js/styles/github.css` — единственный разрешённый импорт CSS кроме Bootstrap |
+| Иконки | Bootstrap Icons | `src/main.js` | Шрифт иконок `bootstrap-icons.min.css` от авторов Bootstrap |
+| Подсветка кода | highlight.js (core + нужные языки) | `src/utils/highlight.js` | Готовая тема `highlight.js/styles/github.css` |
 | Редактор кода | CodeMirror 6 | `src/components/CodeEditor.vue` | Свои стили CodeMirror; размеры — через `EditorView.theme()` в конфигурации редактора |
 
 Правила:
@@ -73,7 +76,8 @@ CDN-ссылки в `index.html` не добавлять.
 
 ```bash
 cd frontend
-grep -rn "<style\|style=\|text-muted\|bg-white\|text-dark\|\.css'" src | grep -v "progress-bar\|bootstrap.min.css\|highlight.js/styles"   # должно быть пусто
+grep -rn "<style\|style=\|text-muted\|bg-white\|text-dark\|\.css'" src | grep -v "progress-bar\|bootstrap.min.css\|bootstrap-icons.min.css\|highlight.js/styles"   # должно быть пусто
+grep -rnP "[\x{2190}-\x{21FF}\x{2300}-\x{2317}\x{2319}-\x{27BF}\x{2B00}-\x{2BFF}\x{1F000}-\x{1FAFF}\x{25A0}-\x{25FF}]" src   # эмодзи и пиктограммы — должно быть пусто
 npx vite build                                                                                                       # сборка без ошибок
 ```
 

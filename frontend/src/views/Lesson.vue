@@ -21,7 +21,7 @@
         </nav>
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
           <h1 class="h2 mb-0">{{ lesson.title }}</h1>
-          <span class="badge fs-6" :class="lessonTypeBadgeClass(lesson.type)">{{ lessonTypeLabel(lesson.type) }}</span>
+          <span class="badge fs-6" :class="lessonTypeBadgeClass(lesson.type)"><i class="bi me-1" :class="lessonTypeIcon(lesson.type)" aria-hidden="true"></i>{{ lessonTypeLabel(lesson.type) }}</span>
         </div>
 
         <!-- Lesson Content -->
@@ -79,8 +79,8 @@
             <button @click="submitCode" class="btn btn-primary" :disabled="!code.trim()">
               Отправить решение
             </button>
-            <div v-if="codeResult" class="alert mt-3 mb-0" :class="codeResult.includes('✅') ? 'alert-success' : 'alert-danger'">
-              {{ codeResult }}
+            <div v-if="codeResult" class="alert mt-3 mb-0" :class="codeResult.ok ? 'alert-success' : 'alert-danger'">
+              <i class="bi me-1" :class="codeResult.ok ? 'bi-check-circle-fill' : 'bi-x-circle-fill'" aria-hidden="true"></i>{{ codeResult.text }}
             </div>
           </div>
         </div>
@@ -88,7 +88,7 @@
         <!-- Actions -->
         <div class="text-center mt-4">
           <button @click="markAsComplete" class="btn btn-success btn-lg" :disabled="isCompleted">
-            <span v-if="isCompleted">✓ Пройдено</span>
+            <span v-if="isCompleted"><i class="bi bi-check-lg me-1" aria-hidden="true"></i>Пройдено</span>
             <span v-else>Отметить как пройденное</span>
           </button>
         </div>
@@ -103,7 +103,7 @@
 import { onMounted, computed, ref, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { renderMarkdown } from '@/utils/markdown';
-import { lessonTypeBadgeClass, lessonTypeLabel } from '@/utils/badges';
+import { lessonTypeBadgeClass, lessonTypeLabel, lessonTypeIcon } from '@/utils/badges';
 import { coursesAPI } from '@/api';
 import { useAuthStore } from '@/stores/auth';
 import { useProgressStore } from '@/stores/progress';
@@ -177,13 +177,13 @@ export default {
 
     const submitCode = async () => {
       try {
-        codeResult.value = '✅ Код принят на проверку! (Демонстрация)';
+        codeResult.value = { ok: true, text: 'Код принят на проверку! (Демонстрация)' };
         await progressStore.updateLessonProgress(lesson.value.id, {
           is_completed: true,
           code_submission: code.value
         });
       } catch (error) {
-        codeResult.value = '❌ Ошибка при проверке кода';
+        codeResult.value = { ok: false, text: 'Ошибка при проверке кода' };
       }
     };
 
@@ -205,7 +205,7 @@ export default {
     return {
       lesson, loading, isCompleted, renderedContent, lessonTypeLabel,
       markAsComplete, answers, allAnswersSelected, quizResult, submitQuiz,
-      code, codeResult, submitCode, auth, lessonTypeBadgeClass, onChallengePassed
+      code, codeResult, submitCode, auth, lessonTypeBadgeClass, lessonTypeIcon, onChallengePassed
     };
   }
 };

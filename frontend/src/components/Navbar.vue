@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar navbar-expand-lg bg-dark sticky-top" data-bs-theme="dark">
     <div class="container">
-      <router-link to="/" class="navbar-brand fw-bold">📚 Edu ISR</router-link>
+      <router-link to="/" class="navbar-brand fw-bold"><i class="bi bi-mortarboard-fill me-2" aria-hidden="true"></i>Edu ISR</router-link>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
               aria-controls="navbarNav" aria-expanded="false" aria-label="Меню">
@@ -33,7 +33,7 @@
               <span class="navbar-text">{{ auth.user?.name }}</span>
             </li>
             <li class="nav-item">
-              <button @click="auth.logout()" class="btn btn-outline-danger btn-sm">Выход</button>
+              <button @click="auth.logout()" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Выход</button>
             </li>
           </template>
 
