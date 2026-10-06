@@ -1,9 +1,12 @@
 // Grading core for JavaScript challenges: runs student tests against the reference
 // implementation and against mutants (implementations with planted bugs).
+// kind 'function': the subject defines functions that tests call directly.
+// kind 'api': the subject defines createServer() returning a request handler; tests use
+// the api client below, and every test starts with a fresh server.
 // evaluateChallenge must stay self-contained: it is serialized into a Web Worker via
 // toString() and also imported by scripts/build-course-seed.js to verify solutions.
 
-export function evaluateChallenge({ subject, mutants = [], code }) {
+export function evaluateChallenge({ subject, mutants = [], code, kind = 'function' }) {
   class AssertionError extends Error {}
 
   const format = (value) => {
@@ -82,17 +85,36 @@ export function evaluateChallenge({ subject, mutants = [], code }) {
     return { ...matchers(false), not: matchers(true) };
   };
 
+  const API_PRELUDE = `
+let __handle = null;
+beforeEach(() => { __handle = createServer(); });
+const __clone = (value) => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
+const api = {
+  request(method, path, { body, headers } = {}) {
+    if (!__handle) throw new Error('api доступен только внутри test(...)');
+    const res = __handle({ method, path, body: __clone(body), headers: { ...(headers || {}) } });
+    return { status: res.status, body: __clone(res.body), headers: res.headers || {} };
+  },
+  get: (path, options) => api.request('GET', path, options),
+  delete: (path, options) => api.request('DELETE', path, options),
+  post: (path, body, options) => api.request('POST', path, { ...options, body }),
+  put: (path, body, options) => api.request('PUT', path, { ...options, body })
+};`;
+
   const run = (implementation, logs) => {
     const tests = [];
+    const hooks = [];
     const test = (name, fn) => tests.push({ name: String(name), fn });
+    const beforeEach = (fn) => hooks.push(fn);
     const sandboxConsole = {
       log: (...args) => logs?.push(args.map((arg) => (typeof arg === 'string' ? arg : format(arg))).join(' '))
     };
 
     try {
       // eslint-disable-next-line no-new-func
-      new Function('test', 'it', 'expect', 'console', `${implementation}\n;\n${code}`)(
-        test, test, expect, sandboxConsole
+      const prelude = kind === 'api' ? API_PRELUDE : '';
+      new Function('test', 'it', 'expect', 'console', 'beforeEach', `${implementation}\n;\n${prelude}\n;\n${code}`)(
+        test, test, expect, sandboxConsole, beforeEach
       );
     } catch (error) {
       return { error: `${error.name}: ${error.message}`, tests: [] };
@@ -102,6 +124,7 @@ export function evaluateChallenge({ subject, mutants = [], code }) {
       error: null,
       tests: tests.map(({ name, fn }) => {
         try {
+          hooks.forEach((hook) => hook());
           fn();
           return { name, passed: true };
         } catch (error) {

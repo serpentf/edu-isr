@@ -1,8 +1,16 @@
 <template>
   <div class="card shadow-sm mb-4">
     <div class="card-body p-4">
-      <h2 class="h4 mb-3">Тестируемая функция</h2>
-      <pre class="border rounded mb-4"><code class="hljs" v-html="subjectHtml"></code></pre>
+      <template v-if="isApi">
+        <h2 class="h4 mb-3">API-консоль</h2>
+        <div class="mb-4">
+          <ApiConsole :subject="challenge.subject" :examples="challenge.examples || []" @add-test="addTest" />
+        </div>
+      </template>
+      <template v-else>
+        <h2 class="h4 mb-3">Тестируемая функция</h2>
+        <pre class="border rounded mb-4"><code class="hljs" v-html="subjectHtml"></code></pre>
+      </template>
 
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
         <h2 class="h4 mb-0">Ваши тесты</h2>
@@ -73,11 +81,21 @@
 <script>
 import { computed, ref, watch } from 'vue';
 import CodeEditor from '@/components/CodeEditor.vue';
+import ApiConsole from '@/components/ApiConsole.vue';
 import { runChallenge } from '@/utils/testRunner';
 import { isChallengePassed } from '@/utils/challengeCore';
 import { highlight } from '@/utils/highlight';
 
 const draftKey = (lessonId) => `challenge-draft-${lessonId}`;
+
+// Russian plural: 1 тест, 2 теста, 5 тестов
+const plural = (n, one, few, many) => {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+};
 
 const loadDraft = (lessonId) => {
   try {
@@ -97,7 +115,7 @@ const saveDraft = (lessonId, code) => {
 
 export default {
   name: 'JsChallenge',
-  components: { CodeEditor },
+  components: { CodeEditor, ApiConsole },
   props: {
     lessonId: { type: [Number, String], required: true },
     challenge: { type: Object, required: true }
@@ -108,6 +126,7 @@ export default {
     const result = ref(null);
     const running = ref(false);
     const minTests = computed(() => props.challenge.minTests || 1);
+    const isApi = computed(() => props.challenge.kind === 'api');
 
     const subjectHtml = computed(() => highlight(props.challenge.subject, 'javascript'));
     const solutionHtml = computed(() => highlight(props.challenge.solution || '', 'javascript'));
@@ -121,7 +140,9 @@ export default {
       const r = result.value;
       if (!r.tests.length) return 'Напишите хотя бы один тест.';
       if (!referencePassed.value) return 'Исправьте тесты, которые падают на правильной реализации.';
-      if (r.tests.length < minTests.value) return `Нужно минимум ${minTests.value} теста(ов), сейчас ${r.tests.length}.`;
+      if (r.tests.length < minTests.value) {
+        return `Нужно минимум ${minTests.value} ${plural(minTests.value, 'тест', 'теста', 'тестов')}, сейчас ${r.tests.length}.`;
+      }
       const left = r.mutants.filter((m) => !m.caught).length;
       return `Осталось поймать багов: ${left}. Добавьте тесты на случаи, которые ещё не проверены.`;
     });
@@ -134,10 +155,15 @@ export default {
       result.value = await runChallenge({
         subject: props.challenge.subject,
         mutants: props.challenge.mutants || [],
-        code: code.value
+        code: code.value,
+        kind: props.challenge.kind
       });
       running.value = false;
       if (passed.value) emit('passed', code.value);
+    };
+
+    const addTest = (snippet) => {
+      code.value = `${code.value.replace(/\s+$/, '')}\n\n${snippet}\n`;
     };
 
     const reset = () => {
@@ -145,7 +171,9 @@ export default {
       result.value = null;
     };
 
-    return { code, result, running, subjectHtml, solutionHtml, referencePassed, passed, nextStep, run, reset };
+    return {
+      code, result, running, isApi, subjectHtml, solutionHtml, referencePassed, passed, nextStep, run, reset, addTest
+    };
   }
 };
 </script>

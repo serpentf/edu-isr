@@ -61,6 +61,9 @@ const readLesson = (file) => {
 
 // JavaScript challenges keep their code in tagged fences: ```js @subject, @starter, @solution,
 // @mutant <hint>, and ```json @config. They are removed from the lesson text and stored as data.
+// @config: minTests, kind ('function' | 'api'), examples (API console presets) and
+// mutantMode: 'override' — each @mutant block holds only the redefined functions and is
+// appended to the subject (a later function declaration replaces an earlier one).
 const challenges = [];
 const TAGGED_FENCE = /^```(\w+) @(\w+)(?: (.*))?\r?\n([\s\S]*?)^```[ \t]*(?:\r?\n|$)/gm;
 
@@ -74,6 +77,11 @@ const parseChallenge = (markdown, file) => {
     else throw new Error(`${file}: unknown block @${tag}`);
     return '';
   }).replace(/\n{3,}/g, '\n\n').trim();
+
+  if (data.mutantMode === 'override') {
+    data.mutants = data.mutants.map((m) => ({ ...m, source: `${data.subject}\n\n${m.source}` }));
+  }
+  delete data.mutantMode;
 
   if (!data.subject) throw new Error(`${file}: missing \`\`\`js @subject block`);
   if (!data.solution) throw new Error(`${file}: missing \`\`\`js @solution block`);

@@ -31,6 +31,13 @@ export const renderMarkdown = (source) => {
 
   highlightBlocks(doc.body);
 
+  // The card already has padding: no top margin for the first element of a lesson
+  const first = doc.body.firstElementChild;
+  if (first) {
+    first.classList.remove('mt-4', 'mt-5');
+    first.classList.add('mt-0');
+  }
+
   doc.body.querySelectorAll('blockquote > :last-child').forEach((el) => el.classList.add('mb-0'));
 
   return doc.body.innerHTML;

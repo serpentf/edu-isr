@@ -9,7 +9,7 @@ const failure = (error) => ({ error, tests: [], logs: [], mutants: [] });
 
 // Runs student code in a Web Worker: no access to the page, and an infinite loop
 // is cut off by terminating the worker.
-export const runChallenge = ({ subject, mutants, code }) => new Promise((resolve) => {
+export const runChallenge = ({ subject, mutants, code, kind }) => new Promise((resolve) => {
   const url = URL.createObjectURL(new Blob([WORKER_SOURCE], { type: 'text/javascript' }));
   const worker = new Worker(url);
 
@@ -34,6 +34,7 @@ export const runChallenge = ({ subject, mutants, code }) => new Promise((resolve
   worker.postMessage({
     subject: String(subject),
     mutants: mutants.map(({ hint, source }) => ({ hint, source })),
-    code: String(code)
+    code: String(code),
+    kind: kind || 'function'
   });
 });
