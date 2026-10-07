@@ -9,13 +9,15 @@ const generateToken = (user) => {
   );
 };
 
+const EMAIL_TAKEN = 'Пользователь с таким email уже зарегистрирован';
+
 exports.register = async (req, res) => {
   try {
     const { email, password, name } = req.body;
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({ error: EMAIL_TAKEN, fields: { email: EMAIL_TAKEN } });
     }
 
     const user = await User.create({ email, password, name });
@@ -23,8 +25,12 @@ exports.register = async (req, res) => {
 
     res.status(201).json({ user, token });
   } catch (error) {
+    // Two simultaneous registrations with the same email pass the check above
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: EMAIL_TAKEN, fields: { email: EMAIL_TAKEN } });
+    }
     console.error('Register error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    res.status(500).json({ error: 'Не удалось зарегистрироваться, попробуйте позже' });
   }
 };
 
@@ -34,18 +40,18 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ where: { email } });
     if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Неверный email или пароль' });
     }
 
     if (!user.is_active) {
-      return res.status(403).json({ error: 'Account is deactivated' });
+      return res.status(403).json({ error: 'Аккаунт деактивирован' });
     }
 
     const token = generateToken(user);
     res.json({ user, token });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    res.status(500).json({ error: 'Не удалось войти, попробуйте позже' });
   }
 };
 

@@ -51,6 +51,16 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user');
   };
 
+  // The role cached in localStorage is only a hint: confirm the user with the server
+  const verify = async () => {
+    if (!token.value) return;
+    try {
+      await fetchMe();
+    } catch {
+      // fetchMe already logged out
+    }
+  };
+
   const fetchMe = async () => {
     try {
       const response = await authAPI.getMe();
@@ -71,5 +81,5 @@ export const useAuthStore = defineStore('auth', () => {
 
   init();
 
-  return { user, token, loading, isAuthenticated, isAdmin, register, login, logout, fetchMe };
+  return { user, token, loading, isAuthenticated, isAdmin, register, login, logout, fetchMe, verify };
 });

@@ -25,10 +25,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // 401 from login/register means wrong credentials: let the form show the message.
+    // 401 from /auth/me at startup means an expired session: the store logs out and the
+    // visitor stays on the current page as a guest.
+    const isAuthRequest = /\/auth\/(login|register|me)$/.test(error.config?.url || '');
+    if (error.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+      }
     }
     return Promise.reject(error);
   }
