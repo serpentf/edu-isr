@@ -32,6 +32,7 @@ app.use('/api/courses', require('./routes/courses'));
 app.use('/api/progress', require('./routes/progress'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/certificates', require('./routes/certificates'));
+app.use('/api/admin/stats', require('./routes/stats'));
 
 // Health check
 app.get('/api/health', (req, res) => {

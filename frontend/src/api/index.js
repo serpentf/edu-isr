@@ -76,6 +76,13 @@ export const certificatesAPI = {
   revoke: (id, reason) => api.post(`/certificates/${id}/revoke`, { reason })
 };
 
+// Admin statistics API
+export const statsAPI = {
+  courses: () => api.get('/admin/stats/courses'),
+  course: (courseId) => api.get(`/admin/stats/courses/${courseId}`),
+  student: (courseId, userId) => api.get(`/admin/stats/courses/${courseId}/students/${userId}`)
+};
+
 // Users API
 export const usersAPI = {
   getAll: () => api.get('/users'),

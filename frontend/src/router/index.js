@@ -89,6 +89,20 @@ const routes = [
     beforeEnter: adminOnly
   },
   {
+    path: '/admin/stats',
+    name: 'AdminStats',
+    component: () => import('@/views/Admin/Stats.vue'),
+    meta: { title: 'Admin - Statistics' },
+    beforeEnter: adminOnly
+  },
+  {
+    path: '/admin/stats/:courseId/students/:userId',
+    name: 'AdminStudentStats',
+    component: () => import('@/views/Admin/StudentStats.vue'),
+    meta: { title: 'Admin - Student' },
+    beforeEnter: adminOnly
+  },
+  {
     path: '/admin/certificates',
     name: 'AdminCertificates',
     component: () => import('@/views/Admin/Certificates.vue'),

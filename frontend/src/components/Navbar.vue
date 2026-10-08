@@ -21,7 +21,7 @@
 
             <template v-if="auth.isAdmin">
               <li class="nav-item">
-                <router-link to="/admin/courses" class="nav-link text-warning">Админ-панель</router-link>
+                <router-link to="/admin/stats" class="nav-link text-warning">Админ-панель</router-link>
               </li>
             </template>
           </template>

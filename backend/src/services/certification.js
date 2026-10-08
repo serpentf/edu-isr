@@ -19,7 +19,8 @@ const isRequired = (lesson) =>
   lesson.type === 'quiz' ||
   (lesson.type === 'code_challenge' && lesson.code_challenge_data?.language === 'javascript');
 
-const getCourseRequirements = async (userId, courseId) => {
+// Course with modules and published lessons in display order
+const loadCourseStructure = async (courseId) => {
   const course = await Course.findByPk(courseId, {
     attributes: ['id', 'title', 'slug', 'is_published'],
     include: [{
@@ -41,9 +42,17 @@ const getCourseRequirements = async (userId, courseId) => {
   });
   if (!course) return null;
 
-  const required = course.modules.flatMap((module) =>
-    module.lessons.filter(isRequired).map((lesson) => ({ lesson, module }))
+  const lessons = course.modules.flatMap((module) =>
+    module.lessons.map((lesson) => ({ lesson, module, required: isRequired(lesson) }))
   );
+  return { course, lessons };
+};
+
+const getCourseRequirements = async (userId, courseId) => {
+  const structure = await loadCourseStructure(courseId);
+  if (!structure) return null;
+  const { course } = structure;
+  const required = structure.lessons.filter((l) => l.required);
 
   const progress = required.length
     ? await UserProgress.findAll({ where: { user_id: userId, lesson_id: required.map((r) => r.lesson.id) } })
@@ -89,4 +98,4 @@ const generateUniqueCode = async () => {
   throw new Error('Could not generate a unique certificate code');
 };
 
-module.exports = { PASS_SCORE, gradeQuiz, getCourseRequirements, generateUniqueCode };
+module.exports = { PASS_SCORE, gradeQuiz, isRequired, loadCourseStructure, getCourseRequirements, generateUniqueCode };
