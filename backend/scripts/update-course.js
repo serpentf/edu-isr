@@ -4,10 +4,10 @@
 // Usage: node scripts/update-course.js <course-dir> [--apply]
 // Without --apply only the plan is printed; nothing is written.
 //
-// Matching: modules and lessons carry a stable source_key (file name without the order
-// prefix). Records without a key (courses loaded before keys existed) are matched once by
-// title and get their key written. Lessons removed from the folder are unpublished, never
-// deleted, so their progress stays.
+// Matching: every module and lesson file has an explicit id (front matter or "id" in quiz
+// JSON) stored in source_key. Records of courses loaded earlier are matched once by the
+// legacy file-name key or by title and get their id written. Lessons removed from the
+// folder are unpublished, never deleted, so their progress stays.
 
 const path = require('path');
 const { sequelize } = require('../src/config/database');
@@ -41,30 +41,41 @@ const LESSON_FIELD_NAMES = {
   source_key: 'ключ'
 };
 
-// Matches source items to database records: first by key, then once by title
-const matchByKeyThenTitle = (sourceItems, dbItems, titleCandidates) => {
+// Matches source items to database records in passes: by explicit id; by the legacy
+// file-name key (courses updated before explicit ids existed); by title (courses loaded
+// before any keys existed). Records matched by the last two passes get the id written.
+const matchItems = (sourceItems, dbItems, titleCandidates) => {
   const matches = new Map();
   const taken = new Set();
   const errors = [];
+  const claim = (item, record, how) => {
+    matches.set(item, { record, how });
+    taken.add(record.id);
+  };
 
   for (const item of sourceItems) {
     const record = dbItems.find((r) => r.source_key === item.key);
-    if (record) {
-      matches.set(item, { record, how: 'key' });
-      taken.add(record.id);
-    }
+    if (record) claim(item, record, 'id');
   }
   for (const item of sourceItems) {
     if (matches.has(item)) continue;
+    const record = dbItems.find((r) => !taken.has(r.id) && r.source_key === item.legacyKey);
+    if (record) claim(item, record, 'legacy');
+  }
+  // Records already carrying an explicit id belong to some other file: never re-match them.
+  // Legacy keys were "<module>/<lesson>" for lessons and the folder name for modules.
+  const legacyKeys = new Set(sourceItems.map((item) => item.legacyKey));
+  const isLegacyOrEmpty = (r) => !r.source_key || r.source_key.includes('/') || legacyKeys.has(r.source_key);
+  for (const item of sourceItems) {
+    if (matches.has(item)) continue;
     for (const candidates of titleCandidates(item)) {
-      const free = candidates.filter((r) => !r.source_key && !taken.has(r.id) && r.title === item.title);
+      const free = candidates.filter((r) => isLegacyOrEmpty(r) && !taken.has(r.id) && r.title === item.title);
       if (free.length > 1) {
         errors.push(`«${item.title}» (${item.key}): в базе несколько записей с таким названием, сопоставить однозначно нельзя`);
         break;
       }
       if (free.length === 1) {
-        matches.set(item, { record: free[0], how: 'title' });
-        taken.add(free[0].id);
+        claim(item, free[0], 'title');
         break;
       }
     }
@@ -109,13 +120,13 @@ const main = async () => {
   const studentsOn = (lessonId) => progressCount.get(lessonId) || 0;
 
   // Modules
-  const moduleMatch = matchByKeyThenTitle(course.modules, dbModules, () => [dbModules]);
+  const moduleMatch = matchItems(course.modules, dbModules, () => [dbModules]);
   errors.push(...moduleMatch.errors);
   const orphanModules = dbModules.filter((m) => !moduleMatch.taken.has(m.id));
 
   // Lessons: by key; then by title in the matched module; then by title anywhere in the course
   const moduleOf = new Map(course.modules.flatMap((m) => m.lessons.map((l) => [l, m])));
-  const lessonMatch = matchByKeyThenTitle(course.lessons, dbLessons, (lesson) => {
+  const lessonMatch = matchItems(course.lessons, dbLessons, (lesson) => {
     const dbModule = moduleMatch.matches.get(moduleOf.get(lesson))?.record;
     return [dbModule ? dbLessons.filter((l) => l.module_id === dbModule.id) : [], dbLessons];
   });
@@ -171,11 +182,14 @@ const main = async () => {
 
   // Report
   const count = (action) => lessonPlans.filter((p) => p.action === action);
-  const byTitle = lessonPlans.filter((p) => p.how === 'title').length + [...moduleMatch.matches.values()].filter((m) => m.how === 'title').length;
+  const allMatches = [...moduleMatch.matches.values(), ...lessonMatch.matches.values()];
+  const byLegacy = allMatches.filter((m) => m.how === 'legacy').length;
+  const byTitle = allMatches.filter((m) => m.how === 'title').length;
   console.log(`\nКурс «${meta.title}» (${meta.slug}): ${dbCourse ? `обновление, id ${dbCourse.id}` : 'будет создан'}`);
   console.log(`Модули: ${course.modules.length}, новых ${course.modules.filter((m) => !moduleMatch.matches.has(m)).length}`);
   console.log(`Уроки: без изменений ${count('same').length}, изменятся ${count('update').length}, новых ${count('create').length}, снимутся с публикации ${toUnpublish.length}`);
-  if (byTitle) console.log(`Первое сопоставление по названиям: ${byTitle} записей получат постоянный ключ`);
+  if (byLegacy) console.log(`Переход на явные id: ${byLegacy} записей сопоставлены по прежнему ключу (имени файла) и получат свой id`);
+  if (byTitle) console.log(`Первое сопоставление по названиям: ${byTitle} записей получат свой id`);
 
   for (const plan of count('update')) {
     const fields = plan.changed.map((f) => LESSON_FIELD_NAMES[f] || f).join(', ');
