@@ -51,6 +51,12 @@ const Lesson = sequelize.define('Lesson', {
   is_published: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  // Stable key from the course folder: "<module key>/<file name without order prefix>";
+  // scripts/update-course.js matches lessons by it, so lesson ids and progress survive updates
+  source_key: {
+    type: DataTypes.STRING(200),
+    allowNull: true
   }
 }, {
   indexes: [

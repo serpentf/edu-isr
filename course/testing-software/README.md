@@ -97,7 +97,9 @@ testing-software/
 
 ## Загрузка на платформу Edu ISR
 
-Курс собирается в SQL-скрипт для базы платформы:
+На сервере курс загружается и обновляется скриптом `backend/scripts/update-course.js`: он сохраняет номера уроков и прогресс студентов. Порядок действий — в [deploy/README.md](../../deploy/README.md), раздел «Обновление».
+
+Для локальной разработки курс можно собрать в SQL-скрипт для пустой базы:
 
 ```bash
 node scripts/build-course-seed.js course/testing-software

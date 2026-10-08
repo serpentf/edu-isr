@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Installs dependencies and builds the frontend on the application host.
 # Run as the owner of the checkout (not root): deploy/scripts/build.sh
-# Then restart the service: sudo systemctl restart edu-isr
+# Then restart the service (sudo systemctl restart edu-isr) and, if lessons changed,
+# update the course content with backend/scripts/update-course.js (deploy/README.md).
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."

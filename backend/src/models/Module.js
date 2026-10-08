@@ -23,6 +23,12 @@ const Module = sequelize.define('Module', {
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 0
+  },
+  // Stable key from the course folder (folder name without the order prefix);
+  // scripts/update-course.js matches modules by it
+  source_key: {
+    type: DataTypes.STRING(150),
+    allowNull: true
   }
 }, {
   indexes: [

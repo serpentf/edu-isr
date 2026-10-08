@@ -5,6 +5,7 @@ const cors = require('cors');
 const { sequelize, testConnection } = require('./config/database');
 const { sequelize: db } = require('./config/database');
 const { assertProductionSecrets } = require('./config/security');
+const { ensureSchema } = require('./config/schema');
 
 assertProductionSecrets();
 
@@ -72,6 +73,7 @@ const startServer = async () => {
 
   try {
     await db.sync({ alter: process.env.NODE_ENV === 'development' });
+    await ensureSchema(db);
     console.log('✅ Database synced successfully.');
 
     app.listen(PORT, HOST, () => {
