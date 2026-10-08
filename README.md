@@ -125,6 +125,10 @@ edu-isr/
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3001
 
+### Развёртывание на сервере
+
+Пример установки без Docker за реверс-прокси nginx (TLS, systemd, MySQL, файрвол, бэкапы): [deploy/README.md](deploy/README.md).
+
 ### Запуск через Docker (рекомендуется)
 
 Весь проект работает в Docker контейнерах, включая MySQL базу данных:

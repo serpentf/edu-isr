@@ -1,0 +1,47 @@
+# systemd unit for the API on the application host.
+# Install: sudo cp deploy/systemd/edu-isr.service /etc/systemd/system/
+#          sudo systemctl daemon-reload && sudo systemctl enable --now edu-isr
+[Unit]
+Description=Edu ISR backend
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# A transient unprivileged user is allocated at start: nothing to create beforehand.
+# The code (owned by whoever deploys it) is read-only for the service.
+DynamicUser=yes
+WorkingDirectory=/opt/edu-isr/backend
+# Read by systemd itself before dropping privileges, so the file can stay root-only (600)
+EnvironmentFile=/etc/edu-isr/backend.env
+ExecStart=/usr/bin/node src/app.js
+Restart=on-failure
+RestartSec=5
+
+# Hardening on top of what DynamicUser implies (ProtectSystem=strict, PrivateTmp,
+# NoNewPrivileges, ...): the app only reads its files and talks to MySQL over the network.
+# Check with: systemd-analyze security edu-isr
+ProtectHome=true
+PrivateDevices=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+UMask=0077
+# Not set on purpose: MemoryDenyWriteExecute=true breaks the V8 JIT compiler
+
+[Install]
+WantedBy=multi-user.target
