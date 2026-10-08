@@ -83,6 +83,13 @@
           @passed="onChallengePassed"
         />
 
+        <!-- DevTools lab, graded on the server -->
+        <DevtoolsLab
+          v-else-if="lesson.type === 'code_challenge' && lesson.code_challenge_data?.language === 'devtools-lab'"
+          :lesson-id="lesson.id"
+          @passed="isCompleted = true"
+        />
+
         <!-- Code Challenge without automatic grading -->
         <div v-else-if="lesson.type === 'code_challenge' && lesson.code_challenge_data" class="card shadow-sm mb-4">
           <div class="card-body p-4">
@@ -132,7 +139,8 @@ export default {
   name: 'Lesson',
   components: {
     // Loaded only on challenge lessons: the code editor is the heaviest dependency
-    JsChallenge: defineAsyncComponent(() => import('@/components/JsChallenge.vue'))
+    JsChallenge: defineAsyncComponent(() => import('@/components/JsChallenge.vue')),
+    DevtoolsLab: defineAsyncComponent(() => import('@/components/DevtoolsLab.vue'))
   },
   setup() {
     const route = useRoute();
@@ -156,7 +164,8 @@ export default {
 
     const gradedByResult = computed(() =>
       lesson.value?.type === 'quiz' ||
-      (lesson.value?.type === 'code_challenge' && lesson.value?.code_challenge_data?.language === 'javascript')
+      (lesson.value?.type === 'code_challenge' &&
+        ['javascript', 'devtools-lab'].includes(lesson.value?.code_challenge_data?.language))
     );
 
     const allAnswersSelected = computed(() => {

@@ -49,6 +49,18 @@ const readLesson = (file) => {
   }
   const { title, body } = splitTitle(text, file);
   const lesson = { title, content: rewriteAssets(body), type: 'text' };
+  if (file.endsWith('.lab.md')) {
+    // DevTools lab: the tasks and per-student answers live on the server (services/devtoolsLab.js)
+    const config = {};
+    lesson.content = lesson.content.replace(TAGGED_FENCE, (_, lang, tag, arg, code) => {
+      if (tag !== 'config') throw new Error(`${file}: only a json @config block is allowed in a lab`);
+      Object.assign(config, JSON.parse(code));
+      return '';
+    }).trim();
+    lesson.type = 'code_challenge';
+    lesson.code_challenge_data = { language: 'devtools-lab', lab: config.lab || 'shop' };
+    labs.push(file);
+  }
   if (file.endsWith('.challenge.md')) {
     const { content, data } = parseChallenge(lesson.content, file);
     lesson.type = 'code_challenge';
@@ -65,6 +77,7 @@ const readLesson = (file) => {
 // mutantMode: 'override' — each @mutant block holds only the redefined functions and is
 // appended to the subject (a later function declaration replaces an earlier one).
 const challenges = [];
+const labs = [];
 const TAGGED_FENCE = /^```(\w+) @(\w+)(?: (.*))?\r?\n([\s\S]*?)^```[ \t]*(?:\r?\n|$)/gm;
 
 const parseChallenge = (markdown, file) => {
@@ -168,7 +181,7 @@ validateChallenges().then(() => {
   }
 
   console.log(`${path.relative(ROOT, outFile)}: ${stats.modules} modules, ` +
-    `${stats.text} text, ${stats.code_challenge} code challenges (${challenges.length} auto-graded), ${stats.quiz} quizzes`);
+    `${stats.text} text, ${stats.code_challenge} code challenges (${challenges.length} auto-graded, ${labs.length} DevTools labs), ${stats.quiz} quizzes`);
 }).catch((error) => {
   console.error(error.message);
   process.exit(1);

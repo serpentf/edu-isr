@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { Course, Module, Lesson, UserProgress, Certificate } = require('../models');
+const { isLabLesson } = require('./devtoolsLab');
 
 // A quiz is passed with at least this score, percent
 const PASS_SCORE = 70;
@@ -13,10 +14,13 @@ const gradeQuiz = (lesson, answers) => {
   return { score, passed: score >= PASS_SCORE, results };
 };
 
-// Lessons that count towards the certificate: every quiz (graded on the server) and every
-// auto-graded JavaScript challenge. Text lessons and the written final project do not count.
+// Lessons completed only through server-side grading: quizzes and DevTools labs
+const isServerGraded = (lesson) => lesson.type === 'quiz' || isLabLesson(lesson);
+
+// Lessons that count towards the certificate: server-graded ones and auto-graded
+// JavaScript challenges. Text lessons and the written final project do not count.
 const isRequired = (lesson) =>
-  lesson.type === 'quiz' ||
+  isServerGraded(lesson) ||
   (lesson.type === 'code_challenge' && lesson.code_challenge_data?.language === 'javascript');
 
 // Course with modules and published lessons in display order
@@ -98,4 +102,4 @@ const generateUniqueCode = async () => {
   throw new Error('Could not generate a unique certificate code');
 };
 
-module.exports = { PASS_SCORE, gradeQuiz, isRequired, loadCourseStructure, getCourseRequirements, generateUniqueCode };
+module.exports = { PASS_SCORE, gradeQuiz, isServerGraded, isRequired, loadCourseStructure, getCourseRequirements, generateUniqueCode };

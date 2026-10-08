@@ -1,5 +1,5 @@
 const { UserProgress, Lesson, Course } = require('../models');
-const { gradeQuiz, PASS_SCORE } = require('../services/certification');
+const { gradeQuiz, PASS_SCORE, isServerGraded } = require('../services/certification');
 
 exports.getProgress = async (req, res) => {
   try {
@@ -52,9 +52,9 @@ exports.updateLessonProgress = async (req, res) => {
     if (!lesson) {
       return res.status(404).json({ error: 'Урок не найден' });
     }
-    // Quiz results are graded on the server only, see submitQuiz
-    if (lesson.type === 'quiz') {
-      return res.status(400).json({ error: 'Результат теста сохраняется только при отправке ответов' });
+    // Quizzes and DevTools labs are completed only through server-side grading
+    if (isServerGraded(lesson)) {
+      return res.status(400).json({ error: 'Результат сохраняется только при отправке ответов' });
     }
     const autoGraded = lesson.type === 'code_challenge' && lesson.code_challenge_data?.language === 'javascript';
     if (autoGraded && is_completed && !(typeof code_submission === 'string' && code_submission.trim())) {

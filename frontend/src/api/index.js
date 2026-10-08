@@ -76,6 +76,13 @@ export const certificatesAPI = {
   revoke: (id, reason) => api.post(`/certificates/${id}/revoke`, { reason })
 };
 
+// DevTools lab API
+export const labsAPI = {
+  state: (lessonId) => api.get(`/labs/${lessonId}/state`),
+  reviews: (lessonId) => api.get(`/labs/${lessonId}/reviews`),
+  check: (lessonId, answers) => api.post(`/labs/${lessonId}/check`, { answers })
+};
+
 // Admin statistics API
 export const statsAPI = {
   courses: () => api.get('/admin/stats/courses'),
