@@ -1,4 +1,4 @@
-const { Lesson, UserProgress } = require('../models');
+const { Lesson, UserProgress, LessonAttempt } = require('../models');
 const { REVIEWS_STATUS, TASKS, isLabLesson, getClues, checkAnswers } = require('../services/devtoolsLab');
 
 const findLab = async (lessonId) => {
@@ -55,6 +55,14 @@ exports.check = async (req, res) => {
       return res.status(400).json({ error: 'Заполните ответы' });
     }
     const { passed, results } = checkAnswers(req.user.id, lesson.id, answers);
+    await LessonAttempt.create({
+      user_id: req.user.id,
+      lesson_id: lesson.id,
+      kind: 'lab',
+      score: Math.round((results.filter((r) => r.correct).length / results.length) * 100),
+      passed,
+      details: { results: results.map(({ key, correct }) => ({ key, correct })) }
+    });
 
     if (passed) {
       const progress = await UserProgress.findOne({ where: { user_id: req.user.id, lesson_id: lesson.id } });

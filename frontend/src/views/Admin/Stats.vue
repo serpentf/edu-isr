@@ -72,6 +72,7 @@
                 <th>Требования</th>
                 <th class="text-end">Тесты</th>
                 <th class="text-end">Средний балл</th>
+                <th class="text-end" title="Отправки тестов и проверки лабораторий">Попыток</th>
                 <th>Активность</th>
                 <th>Статус</th>
               </tr>
@@ -94,6 +95,7 @@
                 </td>
                 <td class="text-end text-nowrap">{{ student.quizzes_passed }}/{{ stats.totals.quizzes_total }}</td>
                 <td class="text-end">{{ student.average_quiz_score === null ? '—' : student.average_quiz_score + '%' }}</td>
+                <td class="text-end">{{ student.attempts }}</td>
                 <td class="small text-nowrap" :title="formatDateTime(student.last_activity)">{{ formatRelative(student.last_activity) }}</td>
                 <td>
                   <span class="badge" :class="studentStatus(student.status).class">
@@ -102,13 +104,14 @@
                 </td>
               </tr>
               <tr v-if="!filteredStudents.length">
-                <td colspan="6" class="text-center text-body-secondary py-4">Никто не подходит под фильтр.</td>
+                <td colspan="7" class="text-center text-body-secondary py-4">Никто не подходит под фильтр.</td>
               </tr>
             </tbody>
           </table>
         </div>
         <div v-if="stats.students.length" class="card-footer small text-body-secondary">
           Показано {{ filteredStudents.length }} из {{ stats.students.length }}. Учитываются студенты, начавшие курс; администраторы не учитываются.
+          Попытки — отправки тестов и проверки лаборатории DevTools; практики на JavaScript проверяются в браузере и в попытки не входят.
         </div>
       </div>
 
@@ -126,12 +129,14 @@
                 <th class="text-end">Начали</th>
                 <th>Прошли</th>
                 <th class="text-end">Средний балл</th>
+                <th class="text-end" title="Всего отправок теста или проверок лаборатории">Попыток</th>
+                <th class="text-end" title="Сколько студентов сдали с первой попытки">С первой попытки</th>
               </tr>
             </thead>
             <tbody>
               <template v-for="group in lessonGroups" :key="group.module">
                 <tr class="table-group-divider">
-                  <th colspan="4" class="small text-body-secondary fw-semibold">{{ group.module }}</th>
+                  <th colspan="6" class="small text-body-secondary fw-semibold">{{ group.module }}</th>
                 </tr>
                 <tr v-for="lesson in group.lessons" :key="lesson.lesson_id">
                   <td>
@@ -156,6 +161,14 @@
                       <span v-if="lesson.average_score < PASS_SCORE" class="badge text-bg-warning ms-1">
                         <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>сложный
                       </span>
+                    </template>
+                    <span v-else class="text-body-secondary">—</span>
+                  </td>
+                  <td class="text-end">{{ lesson.attempts || '—' }}</td>
+                  <td class="text-end text-nowrap">
+                    <template v-if="lesson.attempted_students">
+                      {{ lesson.first_try_passed }} из {{ lesson.attempted_students }}
+                      <span class="small text-body-secondary">({{ percent(lesson.first_try_passed, lesson.attempted_students) }}%)</span>
                     </template>
                     <span v-else class="text-body-secondary">—</span>
                   </td>
@@ -244,11 +257,11 @@ export default {
       const quote = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
       const t = stats.value.totals;
       const rows = [
-        ['Имя', 'Email', 'Статус', 'Требования', 'Тесты сдано', 'Средний балл, %', 'Начал', 'Последняя активность', 'Сертификат'],
+        ['Имя', 'Email', 'Статус', 'Требования', 'Тесты сдано', 'Средний балл, %', 'Попыток', 'Начал', 'Последняя активность', 'Сертификат'],
         ...filteredStudents.value.map((s) => [
           s.name, s.email, studentStatus(s.status).label,
           `${s.required_passed}/${t.required_total}`, `${s.quizzes_passed}/${t.quizzes_total}`,
-          s.average_quiz_score ?? '', formatDate(s.started_at), formatDateTime(s.last_activity), s.certificate_code || ''
+          s.average_quiz_score ?? '', s.attempts, formatDate(s.started_at), formatDateTime(s.last_activity), s.certificate_code || ''
         ])
       ];
       const csv = '﻿' + rows.map((row) => row.map(quote).join(';')).join('\r\n');

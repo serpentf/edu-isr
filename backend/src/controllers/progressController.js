@@ -1,4 +1,4 @@
-const { UserProgress, Lesson, Course } = require('../models');
+const { UserProgress, Lesson, Course, LessonAttempt } = require('../models');
 const { gradeQuiz, PASS_SCORE, isServerGraded } = require('../services/certification');
 
 exports.getProgress = async (req, res) => {
@@ -104,6 +104,14 @@ exports.submitQuiz = async (req, res) => {
     }
 
     const { score, passed, results } = gradeQuiz(lesson, answers);
+    await LessonAttempt.create({
+      user_id: userId,
+      lesson_id: lesson.id,
+      kind: 'quiz',
+      score,
+      passed,
+      details: { answers, results: results.map((r) => r.correct) }
+    });
 
     const progress = await UserProgress.findOne({ where: { user_id: userId, lesson_id: lessonId } });
     // Keep the best attempt; a passed quiz stays passed

@@ -1,4 +1,4 @@
-const { Course, User, UserProgress, Certificate } = require('../models');
+const { Course, User, UserProgress, Certificate, LessonAttempt } = require('../models');
 const { loadCourseStructure } = require('./certification');
 
 // Student status in a course, from most to least advanced
@@ -51,11 +51,23 @@ const getCourseStats = async (courseId) => {
       attributes: ['user_id', 'lesson_id', 'is_completed', 'quiz_score', 'createdAt', 'updatedAt']
     })
     : [];
-  const userIds = [...new Set(progress.map((p) => p.user_id))];
+  // Attempts in id order, so the first one per student and lesson comes first
+  const allAttempts = lessonIds.length
+    ? await LessonAttempt.findAll({
+      where: { lesson_id: lessonIds },
+      attributes: ['user_id', 'lesson_id', 'score', 'passed', 'createdAt'],
+      order: [['id', 'ASC']]
+    })
+    : [];
+  // A failed lab check leaves no progress record, so students come from both sources
+  const userIds = [...new Set([...progress, ...allAttempts].map((r) => r.user_id))];
   // Admins test courses themselves; their activity would distort the numbers
   const users = userIds.length
     ? await User.findAll({ where: { id: userIds, role: 'student' }, attributes: ['id', 'name', 'email', 'createdAt'] })
     : [];
+  const studentIds = new Set(users.map((u) => u.id));
+  const studentProgress = progress.filter((p) => studentIds.has(p.user_id));
+  const attempts = allAttempts.filter((a) => studentIds.has(a.user_id));
   const certificates = await Certificate.findAll({ where: { course_id: courseId } });
   const certificateByUser = new Map(certificates.map((c) => [c.user_id, c]));
 
@@ -65,8 +77,15 @@ const getCourseStats = async (courseId) => {
     progressByUser.get(record.user_id).push(record);
   }
 
+  const attemptsByUser = new Map();
+  for (const attempt of attempts) {
+    if (!attemptsByUser.has(attempt.user_id)) attemptsByUser.set(attempt.user_id, []);
+    attemptsByUser.get(attempt.user_id).push(attempt);
+  }
+
   const students = users.map((user) => {
     const records = progressByUser.get(user.id) || [];
+    const userAttempts = attemptsByUser.get(user.id) || [];
     const completed = records.filter((r) => r.is_completed);
     const requiredPassed = completed.filter((r) => requiredIds.has(r.lesson_id)).length;
     const quizRecords = records.filter((r) => quizIds.has(r.lesson_id));
@@ -82,8 +101,9 @@ const getCourseStats = async (courseId) => {
       name: user.name,
       email: user.email,
       registered_at: user.createdAt,
-      started_at: minDate(records.map((r) => r.createdAt)),
-      last_activity: maxDate(records.map((r) => r.updatedAt)),
+      started_at: minDate([...records, ...userAttempts].map((r) => r.createdAt)),
+      last_activity: maxDate([...records.map((r) => r.updatedAt), ...userAttempts.map((a) => a.createdAt)]),
+      attempts: userAttempts.length,
       lessons_completed: completed.length,
       required_passed: requiredPassed,
       quizzes_passed: quizRecords.filter((r) => r.is_completed).length,
@@ -94,18 +114,26 @@ const getCourseStats = async (courseId) => {
     };
   }).sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
 
-  // Per lesson: how many students got there, passed, and how hard the quizzes are
+  // Per lesson: how many students got there, passed, how many tries it took
   const lessonStats = lessons.map(({ lesson, module, required }) => {
-    const records = progress.filter((p) => p.lesson_id === lesson.id);
+    const records = studentProgress.filter((p) => p.lesson_id === lesson.id);
+    const lessonAttempts = attempts.filter((a) => a.lesson_id === lesson.id);
+    const firstAttempts = new Map();
+    for (const attempt of lessonAttempts) {
+      if (!firstAttempts.has(attempt.user_id)) firstAttempts.set(attempt.user_id, attempt);
+    }
     return {
       lesson_id: lesson.id,
       title: lesson.title,
       module_title: module.title,
       type: lesson.type,
       required,
-      started: records.length,
+      started: new Set([...records.map((r) => r.user_id), ...firstAttempts.keys()]).size,
       completed: records.filter((r) => r.is_completed).length,
-      average_score: lesson.type === 'quiz' ? average(records.map((r) => r.quiz_score).filter((s) => s !== null)) : null
+      average_score: lesson.type === 'quiz' ? average(records.map((r) => r.quiz_score).filter((s) => s !== null)) : null,
+      attempts: lessonAttempts.length,
+      attempted_students: firstAttempts.size,
+      first_try_passed: [...firstAttempts.values()].filter((a) => a.passed).length
     };
   });
 
@@ -141,6 +169,16 @@ const getStudentCourseStats = async (courseId, userId) => {
   });
   const byLesson = new Map(progress.map((p) => [p.lesson_id, p]));
   const certificate = await Certificate.findOne({ where: { course_id: courseId, user_id: userId } });
+  const attempts = await LessonAttempt.findAll({
+    where: { user_id: userId, lesson_id: structure.lessons.map((l) => l.lesson.id) },
+    attributes: ['lesson_id', 'score', 'passed', 'createdAt'],
+    order: [['id', 'ASC']]
+  });
+  const attemptsByLesson = new Map();
+  for (const attempt of attempts) {
+    if (!attemptsByLesson.has(attempt.lesson_id)) attemptsByLesson.set(attempt.lesson_id, []);
+    attemptsByLesson.get(attempt.lesson_id).push(attempt);
+  }
 
   return {
     course: { id: structure.course.id, title: structure.course.title, slug: structure.course.slug },
@@ -148,13 +186,17 @@ const getStudentCourseStats = async (courseId, userId) => {
     certificate,
     lessons: structure.lessons.map(({ lesson, module, required }) => {
       const record = byLesson.get(lesson.id);
+      const lessonAttempts = attemptsByLesson.get(lesson.id) || [];
       return {
         lesson_id: lesson.id,
         title: lesson.title,
         module_title: module.title,
         type: lesson.type,
         required,
-        started: Boolean(record),
+        started: Boolean(record) || lessonAttempts.length > 0,
+        attempts: lessonAttempts.length,
+        first_score: lessonAttempts[0]?.score ?? null,
+        first_passed: lessonAttempts[0]?.passed ?? null,
         completed: Boolean(record?.is_completed),
         completed_at: record?.completed_at || null,
         score: record?.quiz_score ?? null,

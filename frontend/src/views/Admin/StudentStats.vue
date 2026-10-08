@@ -33,7 +33,7 @@
         </template>
       </p>
 
-      <div class="row row-cols-1 row-cols-sm-3 g-3 mb-4">
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 mb-4">
         <div v-for="tile in tiles" :key="tile.label" class="col">
           <div class="card h-100 shadow-sm">
             <div class="card-body">
@@ -51,14 +51,16 @@
               <tr>
                 <th>Урок</th>
                 <th>Статус</th>
-                <th class="text-end">Балл</th>
+                <th class="text-end">Лучший балл</th>
+                <th class="text-end">Попыток</th>
+                <th class="text-end">Первая попытка</th>
                 <th>Когда</th>
               </tr>
             </thead>
             <tbody>
               <template v-for="group in groups" :key="group.module">
                 <tr class="table-group-divider">
-                  <th colspan="4" class="small text-body-secondary fw-semibold">{{ group.module }}</th>
+                  <th colspan="6" class="small text-body-secondary fw-semibold">{{ group.module }}</th>
                 </tr>
                 <template v-for="lesson in group.lessons" :key="lesson.lesson_id">
                   <tr>
@@ -72,10 +74,19 @@
                       <span v-else class="text-body-secondary"><i class="bi bi-dash-circle me-1" aria-hidden="true"></i>Не начат</span>
                     </td>
                     <td class="text-end">{{ lesson.score === null ? '—' : Math.round(lesson.score) + '%' }}</td>
+                    <td class="text-end">{{ lesson.attempts || '—' }}</td>
+                    <td class="text-end text-nowrap">
+                      <template v-if="lesson.first_score !== null">
+                        {{ Math.round(lesson.first_score) }}%
+                        <i class="bi ms-1" :class="lesson.first_passed ? 'bi-check-circle-fill text-success' : 'bi-x-circle text-danger'" aria-hidden="true"></i>
+                        <span class="visually-hidden">{{ lesson.first_passed ? 'сдан' : 'не сдан' }}</span>
+                      </template>
+                      <span v-else class="text-body-secondary">—</span>
+                    </td>
                     <td class="small text-nowrap">{{ lesson.completed_at ? formatDateTime(lesson.completed_at) : '—' }}</td>
                   </tr>
                   <tr v-if="lesson.code_submission">
-                    <td colspan="4" class="border-top-0 pt-0">
+                    <td colspan="6" class="border-top-0 pt-0">
                       <details class="small">
                         <summary>Отправленное решение</summary>
                         <pre class="border rounded mt-2 mb-0"><code class="hljs" v-html="highlight(lesson.code_submission, 'javascript')"></code></pre>
@@ -126,7 +137,8 @@ export default {
       return [
         { label: 'Требования для сертификата', value: `${requiredPassed.value} из ${required.value.length}` },
         { label: 'Пройдено уроков', value: `${data.value.lessons.filter((l) => l.completed).length} из ${data.value.lessons.length}` },
-        { label: 'Средний балл за тесты', value: scores.length ? `${Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)}%` : '—' }
+        { label: 'Средний балл за тесты', value: scores.length ? `${Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)}%` : '—' },
+        { label: 'Попыток (тесты и лаборатория)', value: data.value.lessons.reduce((sum, l) => sum + l.attempts, 0) }
       ];
     });
 
