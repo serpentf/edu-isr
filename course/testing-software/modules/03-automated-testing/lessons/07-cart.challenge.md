@@ -13,11 +13,23 @@
 - **порядок скидок**: у VIP-клиента с корзиной на 5000 ₽ после скидки 10% получается 4500 ₽, и вторая скидка уже не положена;
 - **пустая корзина** — тоже корзина.
 
-Каждый тест строите по схеме AAA. Для денег с копейками удобен `toBeCloseTo`: дробная арифметика в JavaScript неточна (`0.1 + 0.2 !== 0.3`).
+Каждый тест стройте по схеме [AAA](04-test-structure.md), пример есть в заготовке редактора.
+
+**Деньги и дробные числа.** Компьютер хранит дробные числа в двоичном виде, и многие «круглые» десятичные дроби записываются в нём лишь приблизительно, так же как 1/3 в десятичной записи превращается в 0,3333… Обычно погрешность не видна, но при вычислениях она проявляется:
+
+```js
+0.1 + 0.2     // 0.30000000000000004, а не 0.3
+1999 * 0.9    // 1799.1000000000001, а не 1799.1
+```
+
+Поэтому `expect(cartTotal([1999], true)).toBe(1799.1)` упадёт, хотя расчёт по смыслу верный. `toBe` сравнивает строго, до последнего знака. Для сумм после скидок используйте `toBeCloseTo`: он сравнивает с точностью до двух знаков после запятой, то есть до копейки, и такой тест пройдёт. Для целых сумм без умножения на дробь, например 1500, достаточно `toBe`.
 
 ```js @subject
 function cartTotal(prices, isVip) {
-  let total = prices.reduce((sum, price) => sum + price, 0);
+  let total = 0;
+  for (const price of prices) {
+    total = total + price;
+  }
   if (isVip) {
     total = total * 0.9;
   }
@@ -73,7 +85,10 @@ test('пустая корзина стоит 0', () => {
 
 ```js @mutant VIP-скидка 10% не применяется
 function cartTotal(prices, isVip) {
-  let total = prices.reduce((sum, price) => sum + price, 0);
+  let total = 0;
+  for (const price of prices) {
+    total = total + price;
+  }
   if (total >= 5000) {
     total = total - 500;
   }
@@ -83,7 +98,10 @@ function cartTotal(prices, isVip) {
 
 ```js @mutant Сумма ровно 5000 ₽ не получает скидку 500 ₽
 function cartTotal(prices, isVip) {
-  let total = prices.reduce((sum, price) => sum + price, 0);
+  let total = 0;
+  for (const price of prices) {
+    total = total + price;
+  }
   if (isVip) {
     total = total * 0.9;
   }
@@ -96,7 +114,10 @@ function cartTotal(prices, isVip) {
 
 ```js @mutant Скидки применяются в неправильном порядке
 function cartTotal(prices, isVip) {
-  let total = prices.reduce((sum, price) => sum + price, 0);
+  let total = 0;
+  for (const price of prices) {
+    total = total + price;
+  }
   if (total >= 5000) {
     total = total - 500;
   }
@@ -107,9 +128,12 @@ function cartTotal(prices, isVip) {
 }
 ```
 
-```js @mutant Пустая корзина ломает расчёт
+```js @mutant Пустая корзина стоит не 0 ₽
 function cartTotal(prices, isVip) {
-  let total = prices.reduce((sum, price) => sum + price);
+  let total = prices[0];
+  for (let i = 1; i < prices.length; i++) {
+    total = total + prices[i];
+  }
   if (isVip) {
     total = total * 0.9;
   }

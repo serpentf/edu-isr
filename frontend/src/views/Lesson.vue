@@ -26,7 +26,7 @@
 
         <!-- Lesson Content -->
         <div v-if="lesson.content" class="card shadow-sm mb-4">
-          <div class="card-body p-4" v-html="renderedContent"></div>
+          <div class="card-body p-4" v-html="renderedContent" @click="followInternalLink"></div>
         </div>
 
         <!-- Video -->
@@ -77,6 +77,7 @@
 
         <!-- JavaScript challenge, graded in the browser -->
         <JsChallenge
+          :key="lesson.id"
           v-if="lesson.type === 'code_challenge' && lesson.code_challenge_data?.language === 'javascript'"
           :lesson-id="lesson.id"
           :challenge="lesson.code_challenge_data"
@@ -85,6 +86,7 @@
 
         <!-- DevTools lab, graded on the server -->
         <DevtoolsLab
+          :key="lesson.id"
           v-else-if="lesson.type === 'code_challenge' && lesson.code_challenge_data?.language === 'devtools-lab'"
           :lesson-id="lesson.id"
           @passed="isCompleted = true"
@@ -127,8 +129,8 @@
 </template>
 
 <script>
-import { onMounted, computed, ref, defineAsyncComponent } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted, computed, ref, watch, defineAsyncComponent } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { renderMarkdown } from '@/utils/markdown';
 import { lessonTypeBadgeClass, lessonTypeLabel, lessonTypeIcon } from '@/utils/badges';
 import { coursesAPI, progressAPI } from '@/api';
@@ -144,6 +146,7 @@ export default {
   },
   setup() {
     const route = useRoute();
+    const router = useRouter();
     const auth = useAuthStore();
     const progressStore = useProgressStore();
 
@@ -251,12 +254,37 @@ export default {
       }
     };
 
+    // Links to other lessons inside the Markdown content: navigate within the app
+    // instead of reloading the page
+    const followInternalLink = (event) => {
+      const link = event.target.closest('a');
+      if (!link || event.ctrlKey || event.metaKey || event.shiftKey || link.target === '_blank') return;
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      event.preventDefault();
+      router.push(url.pathname + url.search + url.hash);
+    };
+
+    // The same page instance is reused when moving from one lesson to another
+    watch(() => route.params.id, (id, previous) => {
+      if (!id || id === previous) return;
+      lesson.value = null;
+      loading.value = true;
+      isCompleted.value = false;
+      answers.value = {};
+      quizResult.value = null;
+      quizError.value = null;
+      code.value = '';
+      codeResult.value = null;
+      loadLesson();
+    });
+
     onMounted(() => { loadLesson(); });
 
     return {
       lesson, loading, isCompleted, renderedContent, lessonTypeLabel,
       markAsComplete, answers, allAnswersSelected, quizResult, quizSubmitting, quizError, submitQuiz, gradedByResult,
-      code, codeResult, submitCode, auth, lessonTypeBadgeClass, lessonTypeIcon, onChallengePassed
+      code, codeResult, submitCode, auth, lessonTypeBadgeClass, lessonTypeIcon, onChallengePassed, followInternalLink
     };
   }
 };

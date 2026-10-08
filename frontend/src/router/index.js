@@ -113,7 +113,9 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  // A new page starts at the top; Back restores the previous scroll position
+  scrollBehavior: (to, from, savedPosition) => savedPosition || { top: 0 }
 });
 
 router.beforeEach((to, from, next) => {

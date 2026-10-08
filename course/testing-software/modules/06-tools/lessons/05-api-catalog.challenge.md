@@ -126,9 +126,9 @@ test('в каталоге все 3 товара, включая отсутств
 
 test('цены в каталоге — числа', () => {
   const res = api.get('/products');
-  res.body.forEach((product) => {
+  for (const product of res.body) {
     expect(typeof product.price).toBe('number');
-  });
+  }
 });
 
 test('товар по id возвращает именно этот товар', () => {

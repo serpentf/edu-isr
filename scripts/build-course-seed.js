@@ -139,6 +139,32 @@ const lines = [
 const stats = { modules: 0, text: 0, code_challenge: 0, quiz: 0 };
 const modulesDir = path.join(courseDir, 'modules');
 
+// Links between lessons are written as ordinary relative Markdown links to the lesson
+// file, e.g. [Структура автотеста](04-test-structure.md); they also work on GitHub.
+// Lesson ids are assigned by the database on insert, so links become placeholders that
+// are replaced with /lesson/<id> once every lesson of the course is inserted.
+const lessonIndexByFile = new Map();
+for (const moduleName of sortedEntries(modulesDir)) {
+  const lessonsDir = path.join(modulesDir, moduleName, 'lessons');
+  for (const lessonName of sortedEntries(lessonsDir)) {
+    lessonIndexByFile.set(path.join(lessonsDir, lessonName), lessonIndexByFile.size + 1);
+  }
+}
+const referencedLessons = new Set();
+const lessonPlaceholder = (index) => `__LESSON_${index}__`;
+
+const resolveLessonLinks = (markdown, file) =>
+  markdown.replace(/\]\(([^)\s#]+\.md)(#[^)\s]*)?\)/g, (match, target, anchor = '') => {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(target)) return match; // external URL
+    const resolved = path.resolve(path.dirname(file), target);
+    const index = lessonIndexByFile.get(resolved);
+    if (!index) {
+      throw new Error(`${path.relative(courseDir, file)}: link "${target}" does not point to a lesson of this course`);
+    }
+    referencedLessons.add(index);
+    return `](/lesson/${lessonPlaceholder(index)}${anchor})`;
+  });
+
 sortedEntries(modulesDir).forEach((moduleName, moduleIndex) => {
   const moduleDir = path.join(modulesDir, moduleName);
   const readme = splitTitle(fs.readFileSync(path.join(moduleDir, 'README.md'), 'utf8'), moduleName);
@@ -152,7 +178,9 @@ sortedEntries(modulesDir).forEach((moduleName, moduleIndex) => {
 
   const lessonsDir = path.join(moduleDir, 'lessons');
   sortedEntries(lessonsDir).forEach((lessonName, lessonIndex) => {
-    const lesson = readLesson(path.join(lessonsDir, lessonName));
+    const file = path.join(lessonsDir, lessonName);
+    const lesson = readLesson(file);
+    lesson.content = resolveLessonLinks(lesson.content, file);
     stats[lesson.type]++;
     const values = [
       lesson.title,
@@ -165,8 +193,17 @@ sortedEntries(modulesDir).forEach((moduleName, moduleIndex) => {
     ].map(sql);
     lines.push('INSERT INTO `lessons` (`module_id`, `title`, `content`, `type`, `quiz_data`, `code_challenge_data`, `order_index`, `is_published`, `created_at`, `updated_at`) VALUES');
     lines.push(`(@module_id, ${values.join(', ')}, NOW(), NOW());`);
+    lines.push(`SET @lesson_${lessonIndexByFile.get(file)} = LAST_INSERT_ID();`);
   });
 });
+
+if (referencedLessons.size) {
+  lines.push('', '-- Links between lessons: placeholders become real lesson ids');
+  for (const index of referencedLessons) {
+    lines.push('UPDATE `lessons` l JOIN `modules` m ON m.id = l.module_id ' +
+      `SET l.content = REPLACE(l.content, ${sql(lessonPlaceholder(index))}, @lesson_${index}) WHERE m.course_id = @course_id;`);
+  }
+}
 
 lines.push('', 'COMMIT;', '');
 
