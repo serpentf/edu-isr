@@ -1,6 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
+const adminOnly = (to, from, next) => {
+  const auth = useAuthStore();
+  if (!auth.isAuthenticated || auth.user?.role !== 'admin') {
+    next({ name: 'Login' });
+  } else {
+    next();
+  }
+};
+
 const routes = [
   {
     path: '/',
@@ -53,46 +62,38 @@ const routes = [
     meta: { title: 'Register', hideNavbar: true }
   },
   {
+    path: '/certificates/:code',
+    name: 'Certificate',
+    component: () => import('@/views/CertificateView.vue'),
+    meta: { title: 'Сертификат' }
+  },
+  {
     path: '/admin/courses',
     name: 'AdminCourses',
     component: () => import('@/views/Admin/Courses.vue'),
     meta: { title: 'Admin - Courses' },
-    beforeEnter: (to, from, next) => {
-      const auth = useAuthStore();
-      if (!auth.isAuthenticated || auth.user?.role !== 'admin') {
-        next({ name: 'Login' });
-      } else {
-        next();
-      }
-    }
+    beforeEnter: adminOnly
   },
   {
     path: '/admin/courses/create',
     name: 'CreateCourse',
     component: () => import('@/views/Admin/CourseForm.vue'),
     meta: { title: 'Create Course' },
-    beforeEnter: (to, from, next) => {
-      const auth = useAuthStore();
-      if (!auth.isAuthenticated || auth.user?.role !== 'admin') {
-        next({ name: 'Login' });
-      } else {
-        next();
-      }
-    }
+    beforeEnter: adminOnly
   },
   {
     path: '/admin/courses/:id/edit',
     name: 'EditCourse',
     component: () => import('@/views/Admin/CourseForm.vue'),
     meta: { title: 'Edit Course' },
-    beforeEnter: (to, from, next) => {
-      const auth = useAuthStore();
-      if (!auth.isAuthenticated || auth.user?.role !== 'admin') {
-        next({ name: 'Login' });
-      } else {
-        next();
-      }
-    }
+    beforeEnter: adminOnly
+  },
+  {
+    path: '/admin/certificates',
+    name: 'AdminCertificates',
+    component: () => import('@/views/Admin/Certificates.vue'),
+    meta: { title: 'Admin - Certificates' },
+    beforeEnter: adminOnly
   }
 ];
 

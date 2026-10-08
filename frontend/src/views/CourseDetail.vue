@@ -29,7 +29,7 @@
           <div class="progress" role="progressbar" :aria-valuenow="courseProgress.completion_percentage"
                aria-valuemin="0" aria-valuemax="100">
             <div class="progress-bar bg-success" :style="{ width: courseProgress.completion_percentage + '%' }">
-              {{ courseProgress.completion_percentage }}%
+              {{ Math.round(courseProgress.completion_percentage) }}%
             </div>
           </div>
           <p class="mt-2 mb-0 small text-body-secondary">
@@ -37,6 +37,8 @@
           </p>
         </div>
       </div>
+
+      <CertificatePanel :course-id="course.id" />
 
       <!-- Modules List -->
       <div>
@@ -66,32 +68,32 @@
 </template>
 
 <script>
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCoursesStore } from '@/stores/courses';
 import { useAuthStore } from '@/stores/auth';
 import { levelBadgeClass, levelLabel, lessonTypeBadgeClass, lessonTypeLabel, lessonTypeIcon } from '@/utils/badges';
+import CertificatePanel from '@/components/CertificatePanel.vue';
 
 export default {
   name: 'CourseDetail',
+  components: { CertificatePanel },
   setup() {
     const route = useRoute();
     const coursesStore = useCoursesStore();
     const auth = useAuthStore();
 
     const course = computed(() => coursesStore.currentCourse);
-    const courseProgress = computed(() => null);
+    const courseProgress = ref(null);
 
-    const isLessonCompleted = (lessonId) => {
-      if (!auth.isAuthenticated) return false;
-      return false;
-    };
+    const isLessonCompleted = (lessonId) =>
+      Boolean(courseProgress.value?.completed_lesson_ids?.includes(lessonId));
 
     const loadCourse = async () => {
       const slug = route.params.slug;
       await coursesStore.fetchBySlug(slug);
-      if (auth.isAuthenticated) {
-        await coursesStore.fetchCourseProgress(course.value?.id);
+      if (auth.isAuthenticated && course.value) {
+        courseProgress.value = await coursesStore.fetchCourseProgress(course.value.id);
       }
     };
 

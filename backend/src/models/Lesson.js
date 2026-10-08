@@ -29,7 +29,15 @@ const Lesson = sequelize.define('Lesson', {
   },
   quiz_data: {
     type: DataTypes.JSON,
-    allowNull: true
+    allowNull: true,
+    // Correct answers never leave the server: every serialization (including lessons
+    // nested in a course) goes through this getter. Grading reads the raw value with
+    // lesson.getDataValue('quiz_data').
+    get() {
+      const raw = this.getDataValue('quiz_data');
+      if (!raw?.questions) return raw;
+      return { ...raw, questions: raw.questions.map(({ correct, ...question }) => question) };
+    }
   },
   code_challenge_data: {
     type: DataTypes.JSON,

@@ -41,6 +41,22 @@
         </div>
       </div>
 
+      <!-- My Certificates -->
+      <div v-if="certificates.length" class="card shadow-sm mb-4">
+        <div class="card-header">
+          <h3 class="h5 mb-0">Мои сертификаты</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          <router-link v-for="certificate in certificates" :key="certificate.id" :to="`/certificates/${certificate.code}`"
+                       class="list-group-item list-group-item-action d-flex flex-wrap align-items-center gap-2">
+            <i class="bi bi-award text-primary fs-4" aria-hidden="true"></i>
+            <span class="flex-grow-1">{{ certificate.course?.title }}</span>
+            <span v-if="certificate.revoked_at" class="badge text-bg-danger">Отозван</span>
+            <span class="small text-body-secondary font-monospace">{{ certificate.code }}</span>
+          </router-link>
+        </div>
+      </div>
+
       <!-- My Courses -->
       <div class="card shadow-sm">
         <div class="card-header">
@@ -73,7 +89,8 @@
 </template>
 
 <script>
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, ref } from 'vue';
+import { certificatesAPI } from '@/api';
 import { useAuthStore } from '@/stores/auth';
 import { useProgressStore } from '@/stores/progress';
 import { useCoursesStore } from '@/stores/courses';
@@ -129,9 +146,16 @@ export default {
       }));
     });
 
+    const certificates = ref([]);
+
     const loadDashboard = async () => {
       if (auth.isAuthenticated) {
         await progressStore.getProgress(auth.user.id);
+        try {
+          certificates.value = (await certificatesAPI.mine()).data;
+        } catch {
+          certificates.value = [];
+        }
       }
     };
 
@@ -145,6 +169,7 @@ export default {
       completedCount,
       completionRate,
       groupedCourses,
+      certificates,
       coursesStore
     };
   }

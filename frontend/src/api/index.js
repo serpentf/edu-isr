@@ -62,7 +62,18 @@ export const coursesAPI = {
 export const progressAPI = {
   get: (userId) => api.get(`/progress/${userId}`),
   updateLesson: (lessonId, data) => api.put(`/progress/lesson/${lessonId}`, data),
+  submitQuiz: (lessonId, answers) => api.post(`/progress/lesson/${lessonId}/quiz`, { answers }),
   getCourse: (courseId) => api.get(`/progress/course/${courseId}`)
+};
+
+// Certificates API
+export const certificatesAPI = {
+  status: (courseId) => api.get(`/certificates/course/${courseId}/status`),
+  issue: (courseId, fullName) => api.post(`/certificates/course/${courseId}`, { full_name: fullName }),
+  mine: () => api.get('/certificates/mine'),
+  verify: (code) => api.get(`/certificates/verify/${encodeURIComponent(code)}`),
+  list: () => api.get('/certificates'),
+  revoke: (id, reason) => api.post(`/certificates/${id}/revoke`, { reason })
 };
 
 // Users API

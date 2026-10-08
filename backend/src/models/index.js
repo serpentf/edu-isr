@@ -3,6 +3,7 @@ const Course = require('./Course');
 const Module = require('./Module');
 const Lesson = require('./Lesson');
 const UserProgress = require('./UserProgress');
+const Certificate = require('./Certificate');
 
 // Associations
 User.hasMany(UserProgress, { foreignKey: 'user_id', as: 'progress' });
@@ -17,10 +18,15 @@ UserProgress.belongsTo(Lesson, { foreignKey: 'lesson_id', as: 'lesson' });
 
 Course.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 
+Certificate.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+Certificate.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
+User.hasMany(Certificate, { foreignKey: 'user_id', as: 'certificates' });
+
 module.exports = {
   User,
   Course,
   Module,
   Lesson,
-  UserProgress
+  UserProgress,
+  Certificate
 };

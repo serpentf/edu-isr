@@ -39,4 +39,4 @@ const loginRules = [
   handleValidation
 ];
 
-module.exports = { registerRules, loginRules };
+module.exports = { registerRules, loginRules, handleValidation };

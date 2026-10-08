@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg bg-dark sticky-top" data-bs-theme="dark">
+  <nav class="navbar navbar-expand-lg bg-dark sticky-top d-print-none" data-bs-theme="dark">
     <div class="container">
       <router-link to="/" class="navbar-brand fw-bold"><i class="bi bi-mortarboard-fill me-2" aria-hidden="true"></i>Edu ISR</router-link>
 

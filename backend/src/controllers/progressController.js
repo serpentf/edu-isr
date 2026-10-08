@@ -1,4 +1,5 @@
 const { UserProgress, Lesson, Course } = require('../models');
+const { gradeQuiz, PASS_SCORE } = require('../services/certification');
 
 exports.getProgress = async (req, res) => {
   try {
@@ -44,21 +45,34 @@ exports.getProgress = async (req, res) => {
 exports.updateLessonProgress = async (req, res) => {
   try {
     const { lessonId } = req.params;
-    const { is_completed, quiz_score, code_submission } = req.body;
+    const { is_completed, code_submission } = req.body;
     const userId = req.user.id;
+
+    const lesson = await Lesson.findByPk(lessonId, { attributes: ['id', 'type', 'code_challenge_data'] });
+    if (!lesson) {
+      return res.status(404).json({ error: 'Урок не найден' });
+    }
+    // Quiz results are graded on the server only, see submitQuiz
+    if (lesson.type === 'quiz') {
+      return res.status(400).json({ error: 'Результат теста сохраняется только при отправке ответов' });
+    }
+    const autoGraded = lesson.type === 'code_challenge' && lesson.code_challenge_data?.language === 'javascript';
+    if (autoGraded && is_completed && !(typeof code_submission === 'string' && code_submission.trim())) {
+      return res.status(400).json({ error: 'Для практики нужно отправить решение' });
+    }
 
     let progress = await UserProgress.findOne({
       where: { user_id: userId, lesson_id: lessonId }
     });
 
+    // Completion is sticky: a later request cannot undo a passed lesson
+    const completed = Boolean(is_completed) || Boolean(progress?.is_completed);
     const data = {
       user_id: userId,
       lesson_id: lessonId,
-      is_completed: is_completed || false,
-      completed_at: is_completed ? new Date() : null
+      is_completed: completed,
+      completed_at: completed ? (progress?.completed_at || new Date()) : null
     };
-
-    if (quiz_score !== undefined) data.quiz_score = quiz_score;
     if (code_submission !== undefined) data.code_submission = code_submission;
 
     if (progress) {
@@ -71,6 +85,48 @@ exports.updateLessonProgress = async (req, res) => {
   } catch (error) {
     console.error('Update progress error:', error);
     res.status(500).json({ error: 'Failed to update progress' });
+  }
+};
+
+exports.submitQuiz = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    const { answers } = req.body;
+    const userId = req.user.id;
+
+    const lesson = await Lesson.findByPk(lessonId);
+    if (!lesson || lesson.type !== 'quiz') {
+      return res.status(404).json({ error: 'Тест не найден' });
+    }
+    const questions = lesson.getDataValue('quiz_data')?.questions || [];
+    if (!Array.isArray(answers) || answers.length !== questions.length) {
+      return res.status(400).json({ error: 'Ответьте на все вопросы теста' });
+    }
+
+    const { score, passed, results } = gradeQuiz(lesson, answers);
+
+    const progress = await UserProgress.findOne({ where: { user_id: userId, lesson_id: lessonId } });
+    // Keep the best attempt; a passed quiz stays passed
+    const bestScore = Math.max(score, progress?.quiz_score ?? 0);
+    const completed = passed || Boolean(progress?.is_completed);
+    const data = {
+      user_id: userId,
+      lesson_id: lessonId,
+      quiz_score: bestScore,
+      is_completed: completed,
+      completed_at: completed ? (progress?.completed_at || new Date()) : null
+    };
+    if (progress) {
+      await progress.update(data);
+    } else {
+      await UserProgress.create(data);
+    }
+
+    // Per-question result without the correct answer: the student sees where they were wrong
+    res.json({ score, passed, best_score: bestScore, pass_score: PASS_SCORE, results });
+  } catch (error) {
+    console.error('Submit quiz error:', error);
+    res.status(500).json({ error: 'Не удалось проверить тест' });
   }
 };
 

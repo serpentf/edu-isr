@@ -62,6 +62,7 @@ CDN-ссылки в `index.html` не добавлять.
 | Иконки | Bootstrap Icons | `src/main.js` | Шрифт иконок `bootstrap-icons.min.css` от авторов Bootstrap |
 | Подсветка кода | highlight.js (core + нужные языки) | `src/utils/highlight.js` | Готовая тема `highlight.js/styles/github.css` |
 | Редактор кода | CodeMirror 6 | `src/components/CodeEditor.vue` | Свои стили CodeMirror; размеры — через `EditorView.theme()` в конфигурации редактора |
+| QR-код | qrcode | `src/views/CertificateView.vue` | Генерирует SVG локально, без внешних сервисов; без CSS |
 
 Правила:
 - Тему виджета не правим и не переопределяем. Контейнер вокруг виджета оформляется классами Bootstrap (`border rounded`).

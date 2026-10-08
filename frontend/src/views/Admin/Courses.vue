@@ -1,5 +1,6 @@
 <template>
   <div>
+    <AdminTabs />
     <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
       <h1 class="h3 mb-0">Управление курсами</h1>
       <router-link to="/admin/courses/create" class="btn btn-success">
@@ -62,10 +63,12 @@
 import { onMounted, ref } from 'vue';
 import { coursesAPI } from '@/api';
 import { useAuthStore } from '@/stores/auth';
+import AdminTabs from '@/components/AdminTabs.vue';
 import { levelBadgeClass, levelLabel } from '@/utils/badges';
 
 export default {
   name: 'AdminCourses',
+  components: { AdminTabs },
   setup() {
     const courses = ref([]);
     const loading = ref(true);
