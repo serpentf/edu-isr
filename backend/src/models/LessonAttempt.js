@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
-// Every server-graded attempt: a quiz submission or a DevTools lab check.
+// Every attempt: a quiz submission, a DevTools lab check or a run of challenge tests.
 // UserProgress keeps the best result; this table keeps the history.
 const LessonAttempt = sequelize.define('LessonAttempt', {
   id: {
@@ -18,10 +18,10 @@ const LessonAttempt = sequelize.define('LessonAttempt', {
     allowNull: false
   },
   kind: {
-    type: DataTypes.ENUM('quiz', 'lab'),
+    type: DataTypes.ENUM('quiz', 'lab', 'challenge'),
     allowNull: false
   },
-  // Percent: quiz score, or the share of correct lab answers
+  // Percent: quiz score, the share of correct lab answers or of caught challenge bugs
   score: {
     type: DataTypes.FLOAT,
     allowNull: false
@@ -30,7 +30,8 @@ const LessonAttempt = sequelize.define('LessonAttempt', {
     type: DataTypes.BOOLEAN,
     allowNull: false
   },
-  // Quiz: { answers, results: [bool] }; lab: { results: [{ key, correct }] }
+  // Quiz: { answers, results: [bool] }; lab: { results: [{ key, correct }] };
+  // challenge: { tests, tests_passed, caught: [bool] }
   details: {
     type: DataTypes.JSON,
     allowNull: true

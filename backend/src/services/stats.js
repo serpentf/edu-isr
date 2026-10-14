@@ -1,5 +1,21 @@
 const { Course, User, UserProgress, Certificate, LessonAttempt } = require('../models');
 const { loadCourseStructure } = require('./certification');
+const { practicePercent } = require('./practice');
+const { TASKS, isLabLesson } = require('./devtoolsLab');
+
+// The saved draft in a form the admin page shows as is
+const readableDraft = (lesson, record) => {
+  const draft = record?.draft;
+  if (!draft) return null;
+  if (typeof draft.code === 'string') return { code: draft.code };
+  if (isLabLesson(lesson) && draft.answers) {
+    return { answers: TASKS.map(({ key, label }) => ({ label, answer: draft.answers[key] ?? '' })) };
+  }
+  if (lesson.checklist?.length && Array.isArray(draft.checked)) {
+    return { checklist: lesson.checklist.map((item) => ({ item, checked: draft.checked.includes(item) })) };
+  }
+  return null;
+};
 
 // Student status in a course, from most to least advanced
 const STATUS = {
@@ -200,7 +216,11 @@ const getStudentCourseStats = async (courseId, userId) => {
         completed: Boolean(record?.is_completed),
         completed_at: record?.completed_at || null,
         score: record?.quiz_score ?? null,
-        code_submission: typeof record?.code_submission === 'string' ? record.code_submission : null
+        code_submission: typeof record?.code_submission === 'string' ? record.code_submission : null,
+        // Work in progress: percent done and the last saved code, lab answers or checklist
+        progress_percent: practicePercent(lesson, record),
+        draft: readableDraft(lesson, record),
+        draft_saved_at: record?.draft_saved_at ?? null
       };
     })
   };

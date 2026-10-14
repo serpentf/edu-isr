@@ -1,5 +1,6 @@
 const { Lesson, UserProgress, LessonAttempt } = require('../models');
 const { REVIEWS_STATUS, TASKS, isLabLesson, getClues, checkAnswers } = require('../services/devtoolsLab');
+const { saveProgress } = require('../services/practice');
 
 const findLab = async (lessonId) => {
   const lesson = await Lesson.findByPk(lessonId, { attributes: ['id', 'type', 'code_challenge_data'] });
@@ -18,7 +19,9 @@ exports.getState = async (req, res) => {
     res.json({
       clues: { promo, console_code, storage_token, mobile_code },
       tasks: TASKS.map(({ key, panel, label }) => ({ key, panel, label })),
-      completed: Boolean(progress?.is_completed)
+      completed: Boolean(progress?.is_completed),
+      answers: progress?.draft?.answers || {},
+      progress_percent: progress?.progress_percent ?? null
     });
   } catch (error) {
     console.error('Lab state error:', error);
@@ -55,21 +58,27 @@ exports.check = async (req, res) => {
       return res.status(400).json({ error: 'Заполните ответы' });
     }
     const { passed, results } = checkAnswers(req.user.id, lesson.id, answers);
+    const score = Math.round((results.filter((r) => r.correct).length / results.length) * 100);
     await LessonAttempt.create({
       user_id: req.user.id,
       lesson_id: lesson.id,
       kind: 'lab',
-      score: Math.round((results.filter((r) => r.correct).length / results.length) * 100),
+      score,
       passed,
       details: { results: results.map(({ key, correct }) => ({ key, correct })) }
     });
 
-    if (passed) {
-      const progress = await UserProgress.findOne({ where: { user_id: req.user.id, lesson_id: lesson.id } });
-      const data = { user_id: req.user.id, lesson_id: lesson.id, is_completed: true, completed_at: progress?.completed_at || new Date() };
-      if (progress) await progress.update(data);
-      else await UserProgress.create(data);
+    // The answers are kept as a draft: the form is filled in again after a reload
+    const draft = {};
+    for (const { key } of TASKS) {
+      if (typeof answers[key] === 'string') draft[key] = answers[key].slice(0, 500);
     }
+    await saveProgress(req.user.id, lesson.id, {
+      draft: { answers: draft },
+      draft_saved_at: new Date(),
+      progress_percent: score,
+      is_completed: passed
+    });
 
     res.json({ passed, results });
   } catch (error) {

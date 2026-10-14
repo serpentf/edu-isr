@@ -36,7 +36,7 @@ const loadCourseStructure = async (courseId) => {
         as: 'lessons',
         where: { is_published: true },
         required: false,
-        attributes: ['id', 'title', 'type', 'order_index', 'code_challenge_data']
+        attributes: ['id', 'title', 'type', 'order_index', 'code_challenge_data', 'checklist']
       }]
     }],
     order: [

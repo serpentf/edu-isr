@@ -64,11 +64,12 @@ const main = async () => {
         lesson.type,
         lesson.quiz_data ? JSON.stringify(lesson.quiz_data) : null,
         lesson.code_challenge_data ? JSON.stringify(lesson.code_challenge_data) : null,
+        lesson.checklist ? JSON.stringify(lesson.checklist) : null,
         lesson.order_index,
         true,
         lesson.key
       ].map(sql);
-      lines.push('INSERT INTO `lessons` (`module_id`, `title`, `content`, `type`, `quiz_data`, `code_challenge_data`, `order_index`, `is_published`, `source_key`, `created_at`, `updated_at`) VALUES');
+      lines.push('INSERT INTO `lessons` (`module_id`, `title`, `content`, `type`, `quiz_data`, `code_challenge_data`, `checklist`, `order_index`, `is_published`, `source_key`, `created_at`, `updated_at`) VALUES');
       lines.push(`(@module_id, ${values.join(', ')}, NOW(), NOW());`);
       lines.push(`SET @lesson_${indexOf.get(lesson)} = LAST_INSERT_ID();`);
     }

@@ -35,6 +35,7 @@ const LESSON_FIELD_NAMES = {
   content: 'текст',
   quiz_data: 'вопросы теста',
   code_challenge_data: 'задание',
+  checklist: 'чек-лист',
   module_id: 'модуль',
   order_index: 'порядок',
   is_published: 'публикация',
@@ -147,13 +148,14 @@ const main = async () => {
       content: contentFor(lesson),
       quiz_data: lesson.quiz_data || null,
       code_challenge_data: lesson.code_challenge_data || null,
+      checklist: lesson.checklist || null,
       order_index: lesson.order_index,
       is_published: true,
       source_key: lesson.key
     };
     const changed = Object.keys(target).filter((field) => {
       const current = field === 'quiz_data' ? record.getDataValue('quiz_data') : record[field];
-      return ['quiz_data', 'code_challenge_data'].includes(field) ? !sameJson(current, target[field]) : current !== target[field];
+      return ['quiz_data', 'code_challenge_data', 'checklist'].includes(field) ? !sameJson(current, target[field]) : current !== target[field];
     });
     const targetModule = moduleMatch.matches.get(moduleOf.get(lesson))?.record;
     if (!targetModule || targetModule.id !== record.module_id) changed.push('module_id');
@@ -241,6 +243,7 @@ const main = async () => {
         type: lesson.type,
         quiz_data: lesson.quiz_data || null,
         code_challenge_data: lesson.code_challenge_data || null,
+        checklist: lesson.checklist || null,
         order_index: lesson.order_index,
         is_published: true,
         source_key: lesson.key

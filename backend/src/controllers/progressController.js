@@ -1,5 +1,6 @@
 const { UserProgress, Lesson, Course, LessonAttempt } = require('../models');
 const { gradeQuiz, PASS_SCORE, isServerGraded } = require('../services/certification');
+const { practicePercent, isJsChallenge, saveProgress } = require('../services/practice');
 
 exports.getProgress = async (req, res) => {
   try {
@@ -88,6 +89,92 @@ exports.updateLessonProgress = async (req, res) => {
   }
 };
 
+// The student's own work on one lesson: completion, progress and the saved draft
+exports.getLessonProgress = async (req, res) => {
+  try {
+    const lesson = await Lesson.findByPk(req.params.lessonId, { attributes: ['id', 'type', 'code_challenge_data', 'checklist'] });
+    if (!lesson) return res.status(404).json({ error: 'Урок не найден' });
+    const progress = await UserProgress.findOne({ where: { user_id: req.user.id, lesson_id: lesson.id } });
+    res.json({
+      is_completed: Boolean(progress?.is_completed),
+      progress_percent: practicePercent(lesson, progress),
+      draft: progress?.draft ?? null,
+      draft_saved_at: progress?.draft_saved_at ?? null
+    });
+  } catch (error) {
+    console.error('Get lesson progress error:', error);
+    res.status(500).json({ error: 'Не удалось загрузить прогресс' });
+  }
+};
+
+// Every run of a JavaScript challenge: the tests are graded in the browser, the server keeps
+// the code as a draft, the share of caught bugs as progress and the run in the history
+exports.saveChallengeRun = async (req, res) => {
+  try {
+    const lesson = await Lesson.findByPk(req.params.lessonId, { attributes: ['id', 'type', 'code_challenge_data'] });
+    if (!lesson || !isJsChallenge(lesson)) return res.status(404).json({ error: 'Задание не найдено' });
+
+    const { code, result } = req.body || {};
+    const mutantCount = lesson.code_challenge_data.mutants?.length || 0;
+    const { tests, tests_passed: testsPassed, caught } = result || {};
+    if (typeof code !== 'string' || !Number.isInteger(tests) || !Number.isInteger(testsPassed) ||
+        testsPassed < 0 || testsPassed > tests || !Array.isArray(caught) || caught.length !== mutantCount) {
+      return res.status(400).json({ error: 'Некорректный результат запуска' });
+    }
+
+    // Bugs count only when every test passes on the correct implementation
+    const referencePassed = tests > 0 && testsPassed === tests;
+    const caughtCount = referencePassed ? caught.filter(Boolean).length : 0;
+    const percent = mutantCount ? Math.round((caughtCount / mutantCount) * 100) : 0;
+    const passed = referencePassed && tests >= (lesson.code_challenge_data.minTests || 1) && caughtCount === mutantCount;
+
+    await LessonAttempt.create({
+      user_id: req.user.id,
+      lesson_id: lesson.id,
+      kind: 'challenge',
+      score: percent,
+      passed,
+      details: { tests, tests_passed: testsPassed, caught: caught.map(Boolean) }
+    });
+    const fields = { draft: { code }, draft_saved_at: new Date(), progress_percent: percent };
+    if (passed) Object.assign(fields, { is_completed: true, code_submission: code });
+    const progress = await saveProgress(req.user.id, lesson.id, fields);
+
+    res.json({
+      is_completed: progress.is_completed,
+      progress_percent: practicePercent(lesson, progress),
+      draft_saved_at: progress.draft_saved_at
+    });
+  } catch (error) {
+    console.error('Save challenge run error:', error);
+    res.status(500).json({ error: 'Не удалось сохранить результат' });
+  }
+};
+
+// Ticks in a practice checklist; ticking every item completes the lesson
+exports.saveChecklist = async (req, res) => {
+  try {
+    const lesson = await Lesson.findByPk(req.params.lessonId, { attributes: ['id', 'checklist'] });
+    if (!lesson?.checklist?.length) return res.status(404).json({ error: 'У урока нет чек-листа' });
+    const checked = req.body?.checked;
+    if (!Array.isArray(checked)) return res.status(400).json({ error: 'Некорректный чек-лист' });
+
+    const items = lesson.checklist.filter((item) => checked.includes(item));
+    const percent = practicePercent(lesson, { draft: { checked: items } });
+    const progress = await saveProgress(req.user.id, lesson.id, {
+      draft: { checked: items },
+      draft_saved_at: new Date(),
+      progress_percent: percent,
+      is_completed: percent === 100
+    });
+
+    res.json({ is_completed: progress.is_completed, progress_percent: percent, checked: items });
+  } catch (error) {
+    console.error('Save checklist error:', error);
+    res.status(500).json({ error: 'Не удалось сохранить чек-лист' });
+  }
+};
+
 exports.submitQuiz = async (req, res) => {
   try {
     const { lessonId } = req.params;
@@ -159,9 +246,11 @@ exports.getCourseProgress = async (req, res) => {
     }
 
     const allLessons = [];
+    const lessonsById = new Map();
     course.modules.forEach(module => {
       module.lessons.forEach(lesson => {
         allLessons.push(lesson.id);
+        lessonsById.set(lesson.id, lesson);
       });
     });
 
@@ -183,7 +272,12 @@ exports.getCourseProgress = async (req, res) => {
         ? (completedCount / totalLessons * 100).toFixed(2)
         : 0,
       lesson_ids: allLessons,
-      completed_lesson_ids: progress.filter(p => p.is_completed).map(p => p.lesson_id)
+      completed_lesson_ids: progress.filter(p => p.is_completed).map(p => p.lesson_id),
+      // Practices started but not completed: lesson id -> percent done
+      lesson_progress: Object.fromEntries(progress
+        .filter((p) => !p.is_completed)
+        .map((p) => [p.lesson_id, practicePercent(lessonsById.get(p.lesson_id), p)])
+        .filter(([, percent]) => percent !== null))
     });
   } catch (error) {
     console.error('Get course progress error:', error);

@@ -51,6 +51,7 @@
               <tr>
                 <th>Урок</th>
                 <th>Статус</th>
+                <th class="text-end">Прогресс</th>
                 <th class="text-end">Лучший балл</th>
                 <th class="text-end">Попыток</th>
                 <th class="text-end">Первая попытка</th>
@@ -60,7 +61,7 @@
             <tbody>
               <template v-for="group in groups" :key="group.module">
                 <tr class="table-group-divider">
-                  <th colspan="6" class="small text-body-secondary fw-semibold">{{ group.module }}</th>
+                  <th colspan="7" class="small text-body-secondary fw-semibold">{{ group.module }}</th>
                 </tr>
                 <template v-for="lesson in group.lessons" :key="lesson.lesson_id">
                   <tr>
@@ -73,6 +74,7 @@
                       <span v-else-if="lesson.started" class="text-warning-emphasis"><i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Начат</span>
                       <span v-else class="text-body-secondary"><i class="bi bi-dash-circle me-1" aria-hidden="true"></i>Не начат</span>
                     </td>
+                    <td class="text-end">{{ lesson.progress_percent === null ? '—' : Math.round(lesson.progress_percent) + '%' }}</td>
                     <td class="text-end">{{ lesson.score === null ? '—' : Math.round(lesson.score) + '%' }}</td>
                     <td class="text-end">{{ lesson.attempts || '—' }}</td>
                     <td class="text-end text-nowrap">
@@ -85,11 +87,28 @@
                     </td>
                     <td class="small text-nowrap">{{ lesson.completed_at ? formatDateTime(lesson.completed_at) : '—' }}</td>
                   </tr>
-                  <tr v-if="lesson.code_submission">
-                    <td colspan="6" class="border-top-0 pt-0">
-                      <details class="small">
+                  <tr v-if="lesson.code_submission || lesson.draft">
+                    <td colspan="7" class="border-top-0 pt-0">
+                      <details v-if="lesson.code_submission" class="small">
                         <summary>Отправленное решение</summary>
                         <pre class="border rounded mt-2 mb-0"><code class="hljs" v-html="highlight(lesson.code_submission, 'javascript')"></code></pre>
+                      </details>
+                      <!-- The last saved work; for a passed challenge only when it differs from the solution -->
+                      <details v-if="lesson.draft && lesson.draft.code !== lesson.code_submission" class="small mt-1">
+                        <summary>Последнее сохранение · {{ formatDateTime(lesson.draft_saved_at) }}</summary>
+                        <pre v-if="lesson.draft.code !== undefined" class="border rounded mt-2 mb-0"><code class="hljs" v-html="highlight(lesson.draft.code, 'javascript')"></code></pre>
+                        <dl v-else-if="lesson.draft.answers" class="row mt-2 mb-0">
+                          <template v-for="entry in lesson.draft.answers" :key="entry.label">
+                            <dt class="col-sm-7 fw-normal text-body-secondary">{{ entry.label }}</dt>
+                            <dd class="col-sm-5 font-monospace">{{ entry.answer || '—' }}</dd>
+                          </template>
+                        </dl>
+                        <ul v-else-if="lesson.draft.checklist" class="list-unstyled mt-2 mb-0">
+                          <li v-for="entry in lesson.draft.checklist" :key="entry.item">
+                            <i class="bi me-1" :class="entry.checked ? 'bi-check-square-fill text-success' : 'bi-square text-body-secondary'" aria-hidden="true"></i>
+                            <span class="visually-hidden">{{ entry.checked ? 'Выполнено:' : 'Не выполнено:' }}</span>{{ entry.item }}
+                          </li>
+                        </ul>
                       </details>
                     </td>
                   </tr>
@@ -138,7 +157,7 @@ export default {
         { label: 'Требования для сертификата', value: `${requiredPassed.value} из ${required.value.length}` },
         { label: 'Пройдено уроков', value: `${data.value.lessons.filter((l) => l.completed).length} из ${data.value.lessons.length}` },
         { label: 'Средний балл за тесты', value: scores.length ? `${Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)}%` : '—' },
-        { label: 'Попыток (тесты и лаборатория)', value: data.value.lessons.reduce((sum, l) => sum + l.attempts, 0) }
+        { label: 'Попыток (тесты, практики, лаборатория)', value: data.value.lessons.reduce((sum, l) => sum + l.attempts, 0) }
       ];
     });
 

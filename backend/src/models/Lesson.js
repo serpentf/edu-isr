@@ -43,6 +43,11 @@ const Lesson = sequelize.define('Lesson', {
     type: DataTypes.JSON,
     allowNull: true
   },
+  // Steps of a practice done outside the platform: [item]; the student ticks them off
+  checklist: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
   order_index: {
     type: DataTypes.INTEGER,
     allowNull: false,

@@ -63,7 +63,10 @@ export const progressAPI = {
   get: (userId) => api.get(`/progress/${userId}`),
   updateLesson: (lessonId, data) => api.put(`/progress/lesson/${lessonId}`, data),
   submitQuiz: (lessonId, answers) => api.post(`/progress/lesson/${lessonId}/quiz`, { answers }),
-  getCourse: (courseId) => api.get(`/progress/course/${courseId}`)
+  getCourse: (courseId) => api.get(`/progress/course/${courseId}`),
+  getLesson: (lessonId) => api.get(`/progress/lesson/${lessonId}`),
+  saveRun: (lessonId, data) => api.post(`/progress/lesson/${lessonId}/run`, data),
+  saveChecklist: (lessonId, checked) => api.put(`/progress/lesson/${lessonId}/checklist`, { checked })
 };
 
 // Certificates API

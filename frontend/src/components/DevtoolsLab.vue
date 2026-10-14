@@ -60,6 +60,12 @@
           <div v-if="state.completed && !result" class="alert alert-success">
             <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>Лаборатория уже пройдена. Можно пройти ещё раз для тренировки.
           </div>
+          <p v-else-if="state.progress_percent !== null && !result" class="small text-body-secondary">
+            <i class="bi bi-cloud-check me-1" aria-hidden="true"></i>Ответы последней проверки восстановлены, верно {{ state.progress_percent }}%.
+          </p>
+          <p v-else-if="!result" class="small text-body-secondary">
+            <i class="bi bi-cloud me-1" aria-hidden="true"></i>Ответы сохраняются при каждой проверке.
+          </p>
 
           <form novalidate @submit.prevent="submit">
             <div v-for="(task, index) in state.tasks" :key="task.key" class="mb-3">
@@ -132,6 +138,7 @@ export default {
       loading.value = true;
       try {
         state.value = (await labsAPI.state(props.lessonId)).data;
+        answers.value = { ...state.value.answers };
         // Task 6: something the site keeps in the browser storage
         try {
           localStorage.setItem('cart_token', state.value.clues.storage_token);

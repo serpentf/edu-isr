@@ -70,6 +70,27 @@ const parseChallenge = (markdown, file) => {
   return { content, data };
 };
 
+// A practice done outside the platform may list its steps in a ```text @checklist block,
+// one "- item" per line. The student ticks them off; the share of ticked items is the
+// progress, and ticking all of them completes the lesson. Items are matched by text, so
+// rewording an item clears its tick.
+const parseChecklist = (markdown, file) => {
+  let checklist = null;
+  const content = markdown.replace(TAGGED_FENCE, (match, lang, tag, arg, code) => {
+    if (tag !== 'checklist') return match;
+    if (checklist) throw new Error(`${file}: only one @checklist block is allowed`);
+    checklist = code.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
+      const item = line.replace(/^-\s+/, '');
+      if (item === line) throw new Error(`${file}: checklist items start with "- ": ${line}`);
+      return item;
+    });
+    if (!checklist.length) throw new Error(`${file}: empty @checklist block`);
+    if (new Set(checklist).size !== checklist.length) throw new Error(`${file}: duplicate checklist items`);
+    return '';
+  }).replace(/\n{3,}/g, '\n\n').trim();
+  return { content, checklist };
+};
+
 const readLesson = (file, publicAssets) => {
   const text = fs.readFileSync(file, 'utf8');
   if (file.endsWith('.json')) {
@@ -99,6 +120,10 @@ const readLesson = (file, publicAssets) => {
     lesson.type = 'code_challenge';
     lesson.content = content;
     lesson.code_challenge_data = data;
+  } else if (!file.endsWith('.lab.md')) {
+    const { content, checklist } = parseChecklist(lesson.content, file);
+    lesson.content = content;
+    if (checklist) lesson.checklist = checklist;
   }
   return lesson;
 };

@@ -26,6 +26,15 @@
         <span class="small text-body-secondary">или Ctrl+Enter (⌘+Enter)</span>
       </div>
 
+      <!-- Every run is saved on the server: the work continues on another computer -->
+      <div v-if="auth.isAuthenticated" class="small mt-2" aria-live="polite">
+        <span v-if="saveError" class="text-danger"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>{{ saveError }}</span>
+        <span v-else-if="saved" class="text-body-secondary">
+          <i class="bi bi-cloud-check me-1" aria-hidden="true"></i>Сохранено {{ formatTime(saved.at) }}<template v-if="saved.percent !== null"> · выполнено {{ saved.percent }}%</template>
+        </span>
+        <span v-else class="text-body-secondary"><i class="bi bi-cloud me-1" aria-hidden="true"></i>Код и результат сохраняются при каждом запуске тестов</span>
+      </div>
+
       <div v-if="result" class="mt-4" aria-live="polite">
         <div v-if="result.error" class="alert alert-danger">
           <strong>Код не выполнился.</strong> {{ result.error }}
@@ -79,14 +88,19 @@
 </template>
 
 <script>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import CodeEditor from '@/components/CodeEditor.vue';
 import ApiConsole from '@/components/ApiConsole.vue';
 import { runChallenge } from '@/utils/testRunner';
 import { isChallengePassed } from '@/utils/challengeCore';
 import { highlight } from '@/utils/highlight';
+import { progressAPI } from '@/api';
+import { useAuthStore } from '@/stores/auth';
 
-const draftKey = (lessonId) => `challenge-draft-${lessonId}`;
+// Per user: classroom computers are shared, one student must not get another one's draft
+const draftKey = (lessonId, userId) => `challenge-draft-${userId ?? 'guest'}-${lessonId}`;
+// Before drafts were per user
+const legacyDraftKey = (lessonId) => `challenge-draft-${lessonId}`;
 
 // Russian plural: 1 тест, 2 теста, 5 тестов
 const plural = (n, one, few, many) => {
@@ -97,21 +111,28 @@ const plural = (n, one, few, many) => {
   return many;
 };
 
-const loadDraft = (lessonId) => {
+// Local draft between runs: { code, savedAt } (savedAt in ms)
+const loadDraft = (lessonId, userId) => {
   try {
-    return localStorage.getItem(draftKey(lessonId));
+    const stored = localStorage.getItem(draftKey(lessonId, userId));
+    if (stored) return JSON.parse(stored);
+    const legacy = localStorage.getItem(legacyDraftKey(lessonId));
+    return legacy === null ? null : { code: legacy, savedAt: 0 };
   } catch {
     return null;
   }
 };
 
-const saveDraft = (lessonId, code) => {
+const saveDraft = (lessonId, userId, code) => {
   try {
-    localStorage.setItem(draftKey(lessonId), code);
+    localStorage.setItem(draftKey(lessonId, userId), JSON.stringify({ code, savedAt: Date.now() }));
+    localStorage.removeItem(legacyDraftKey(lessonId));
   } catch {
     // Drafts are a convenience; ignore storage errors
   }
 };
+
+const formatTime = (value) => new Date(value).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
 export default {
   name: 'JsChallenge',
@@ -122,7 +143,12 @@ export default {
   },
   emits: ['passed'],
   setup(props, { emit }) {
-    const code = ref(loadDraft(props.lessonId) ?? props.challenge.starter ?? '');
+    const auth = useAuthStore();
+    const userId = auth.user?.id;
+    const localDraft = loadDraft(props.lessonId, userId);
+    const code = ref(localDraft?.code ?? props.challenge.starter ?? '');
+    const saved = ref(null);
+    const saveError = ref(null);
     const result = ref(null);
     const running = ref(false);
     const minTests = computed(() => props.challenge.minTests || 1);
@@ -147,7 +173,45 @@ export default {
       return `Осталось поймать багов: ${left}. Добавьте тесты на случаи, которые ещё не проверены.`;
     });
 
-    watch(code, (value) => saveDraft(props.lessonId, value));
+    let edited = false;
+    watch(code, (value) => {
+      edited = true;
+      saveDraft(props.lessonId, userId, value);
+    });
+
+    // The server keeps the code of the last run: take it when it is newer than the local draft,
+    // e.g. the student ran the tests on another computer
+    onMounted(async () => {
+      if (!auth.isAuthenticated) return;
+      try {
+        const { data } = await progressAPI.getLesson(props.lessonId);
+        if (!data.draft_saved_at) return;
+        saved.value = { at: data.draft_saved_at, percent: data.progress_percent };
+        const serverNewer = new Date(data.draft_saved_at).getTime() > (localDraft?.savedAt ?? 0);
+        if (typeof data.draft?.code === 'string' && serverNewer && !edited) {
+          code.value = data.draft.code;
+        }
+      } catch {
+        // The local draft is still there
+      }
+    });
+
+    const saveRun = async (r) => {
+      saveError.value = null;
+      try {
+        const { data } = await progressAPI.saveRun(props.lessonId, {
+          code: code.value,
+          result: {
+            tests: r.error ? 0 : r.tests.length,
+            tests_passed: r.error ? 0 : r.tests.filter((t) => t.passed).length,
+            caught: r.error ? props.challenge.mutants.map(() => false) : r.mutants.map((m) => m.caught)
+          }
+        });
+        saved.value = { at: data.draft_saved_at, percent: data.progress_percent };
+      } catch (err) {
+        saveError.value = err.response?.data?.error || 'Не удалось сохранить результат на сервере. Код остался в этом браузере.';
+      }
+    };
 
     const run = async () => {
       if (running.value) return;
@@ -159,7 +223,8 @@ export default {
         kind: props.challenge.kind
       });
       running.value = false;
-      if (passed.value) emit('passed', code.value);
+      if (auth.isAuthenticated) await saveRun(result.value);
+      if (passed.value) emit('passed');
     };
 
     const addTest = (snippet) => {
@@ -172,6 +237,7 @@ export default {
     };
 
     return {
+      auth, saved, saveError, formatTime,
       code, result, running, isApi, subjectHtml, solutionHtml, referencePassed, passed, nextStep, run, reset, addTest
     };
   }

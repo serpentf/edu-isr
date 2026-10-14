@@ -29,6 +29,29 @@
           <div class="card-body p-4" v-html="renderedContent" @click="followInternalLink"></div>
         </div>
 
+        <!-- Practice checklist: the steps of work done outside the platform -->
+        <div v-if="lesson.checklist?.length" class="card shadow-sm mb-4">
+          <div class="card-body p-4">
+            <fieldset>
+              <legend class="h4 mb-1">Чек-лист</legend>
+              <p class="text-body-secondary small">Отмечайте шаги по мере выполнения. Когда отмечены все, практика засчитывается.</p>
+              <div v-for="(item, index) in lesson.checklist" :key="item" class="form-check mb-2">
+                <input :id="`checklist-${index}`" v-model="checkedItems" class="form-check-input" type="checkbox" :value="item"
+                       :disabled="!auth.isAuthenticated || checklistSaving" @change="saveChecklist">
+                <label class="form-check-label" :for="`checklist-${index}`">{{ item }}</label>
+              </div>
+            </fieldset>
+            <div v-if="auth.isAuthenticated" class="progress mt-3" role="progressbar" aria-label="Выполнено"
+                 :aria-valuenow="checklistPercent" aria-valuemin="0" aria-valuemax="100">
+              <div class="progress-bar" :class="{ 'bg-success': checklistPercent === 100 }" :style="{ width: checklistPercent + '%' }">{{ checklistPercent }}%</div>
+            </div>
+            <div v-else class="alert alert-info mt-3 mb-0">
+              <router-link :to="`/login?redirect=${encodeURIComponent($route.fullPath)}`">Войдите</router-link>, чтобы отмечать шаги и сохранять прогресс.
+            </div>
+            <div v-if="checklistError" class="alert alert-danger mt-3 mb-0">{{ checklistError }}</div>
+          </div>
+        </div>
+
         <!-- Video -->
         <div v-if="lesson.type === 'video' && lesson.video_url" class="ratio ratio-16x9 mb-4">
           <video controls>
@@ -159,6 +182,15 @@ export default {
     const quizError = ref(null);
     const code = ref('');
     const codeResult = ref(null);
+    const checkedItems = ref([]);
+    const checklistSaving = ref(false);
+    const checklistError = ref(null);
+
+    const checklistPercent = computed(() => {
+      const items = lesson.value?.checklist || [];
+      if (!items.length) return 0;
+      return Math.round((items.filter((item) => checkedItems.value.includes(item)).length / items.length) * 100);
+    });
 
     const renderedContent = computed(() => {
       if (!lesson.value?.content) return '';
@@ -167,6 +199,7 @@ export default {
 
     const gradedByResult = computed(() =>
       lesson.value?.type === 'quiz' ||
+      Boolean(lesson.value?.checklist?.length) ||
       (lesson.value?.type === 'code_challenge' &&
         ['javascript', 'devtools-lab'].includes(lesson.value?.code_challenge_data?.language))
     );
@@ -180,7 +213,7 @@ export default {
       try {
         const { data } = await coursesAPI.getLesson(route.params.id);
         lesson.value = data;
-        await loadCompletion();
+        await Promise.all([loadCompletion(), loadChecklist()]);
       } catch (error) {
         console.error('Failed to load lesson:', error);
       } finally {
@@ -197,6 +230,29 @@ export default {
         isCompleted.value = data.completed_lesson_ids.includes(lesson.value.id);
       } catch {
         // Progress is a hint here; the lesson itself is already shown
+      }
+    };
+
+    const loadChecklist = async () => {
+      if (!auth.isAuthenticated || !lesson.value?.checklist?.length) return;
+      try {
+        const { data } = await progressAPI.getLesson(lesson.value.id);
+        checkedItems.value = data.draft?.checked || [];
+      } catch {
+        // The checklist starts empty; ticking saves it again
+      }
+    };
+
+    const saveChecklist = async () => {
+      checklistSaving.value = true;
+      checklistError.value = null;
+      try {
+        const { data } = await progressAPI.saveChecklist(lesson.value.id, checkedItems.value);
+        if (data.is_completed) isCompleted.value = true;
+      } catch (error) {
+        checklistError.value = error.response?.data?.error || 'Не удалось сохранить отметку';
+      } finally {
+        checklistSaving.value = false;
       }
     };
 
@@ -241,17 +297,9 @@ export default {
       }
     };
 
-    const onChallengePassed = async (submission) => {
+    // The challenge saves every run itself, the passed one included
+    const onChallengePassed = () => {
       isCompleted.value = true;
-      if (!auth.isAuthenticated) return;
-      try {
-        await progressStore.updateLessonProgress(lesson.value.id, {
-          is_completed: true,
-          code_submission: submission
-        });
-      } catch (error) {
-        console.error('Failed to save challenge result:', error);
-      }
     };
 
     // Links to other lessons inside the Markdown content: navigate within the app
@@ -276,6 +324,8 @@ export default {
       quizError.value = null;
       code.value = '';
       codeResult.value = null;
+      checkedItems.value = [];
+      checklistError.value = null;
       loadLesson();
     });
 
@@ -284,7 +334,7 @@ export default {
     return {
       lesson, loading, isCompleted, renderedContent, lessonTypeLabel,
       markAsComplete, answers, allAnswersSelected, quizResult, quizSubmitting, quizError, submitQuiz, gradedByResult,
-      code, codeResult, submitCode, auth, lessonTypeBadgeClass, lessonTypeIcon, onChallengePassed, followInternalLink
+      code, codeResult, submitCode, auth, checkedItems, checklistSaving, checklistError, checklistPercent, saveChecklist, lessonTypeBadgeClass, lessonTypeIcon, onChallengePassed, followInternalLink
     };
   }
 };

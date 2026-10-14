@@ -58,7 +58,14 @@
                 <span class="badge" :class="lessonTypeBadgeClass(lesson.type)"><i class="bi me-1" :class="lessonTypeIcon(lesson.type)" aria-hidden="true"></i>{{ lessonTypeLabel(lesson.type) }}</span>
                 <span>{{ lesson.title }}</span>
               </div>
-              <i class="bi bi-chevron-right text-primary" aria-hidden="true"></i>
+              <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <span v-if="lessonPercent(lesson.id) !== null" class="badge rounded-pill bg-primary-subtle text-primary-emphasis" :title="`Выполнено ${lessonPercent(lesson.id)}%`">
+                  <i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>{{ lessonPercent(lesson.id) }}%<span class="visually-hidden"> выполнено</span>
+                </span>
+                <i v-if="isLessonCompleted(lesson.id)" class="bi bi-check-circle-fill text-success" aria-hidden="true"></i>
+                <span v-if="isLessonCompleted(lesson.id)" class="visually-hidden">Пройдено</span>
+                <i class="bi bi-chevron-right text-primary" aria-hidden="true"></i>
+              </div>
             </router-link>
           </div>
         </div>
@@ -88,6 +95,8 @@ export default {
 
     const isLessonCompleted = (lessonId) =>
       Boolean(courseProgress.value?.completed_lesson_ids?.includes(lessonId));
+    // Percent done of a started, not yet completed practice
+    const lessonPercent = (lessonId) => courseProgress.value?.lesson_progress?.[lessonId] ?? null;
 
     const loadCourse = async () => {
       const slug = route.params.slug;
@@ -106,6 +115,7 @@ export default {
       courseProgress,
       coursesStore,
       isLessonCompleted,
+      lessonPercent,
       lessonTypeLabel,
       lessonTypeIcon,
       lessonTypeBadgeClass,
