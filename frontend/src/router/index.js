@@ -108,6 +108,13 @@ const routes = [
     component: () => import('@/views/Admin/Certificates.vue'),
     meta: { title: 'Admin - Certificates' },
     beforeEnter: adminOnly
+  },
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: () => import('@/views/Admin/Users.vue'),
+    meta: { title: 'Admin - Users' },
+    beforeEnter: adminOnly
   }
 ];
 

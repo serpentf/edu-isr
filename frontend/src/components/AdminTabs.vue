@@ -15,6 +15,11 @@
         <i class="bi bi-award me-1" aria-hidden="true"></i>Сертификаты
       </router-link>
     </li>
+    <li class="nav-item">
+      <router-link to="/admin/users" class="nav-link" active-class="active">
+        <i class="bi bi-people me-1" aria-hidden="true"></i>Пользователи
+      </router-link>
+    </li>
   </ul>
 </template>
 

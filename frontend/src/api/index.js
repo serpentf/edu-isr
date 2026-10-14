@@ -93,7 +93,8 @@ export const statsAPI = {
 // Users API
 export const usersAPI = {
   getAll: () => api.get('/users'),
-  getById: (id) => api.get(`/users/${id}`)
+  getById: (id) => api.get(`/users/${id}`),
+  setPassword: (id, password) => api.put(`/users/${id}/password`, { password })
 };
 
 export default api;

@@ -18,12 +18,15 @@ const email = body('email')
   .isEmail().withMessage('Введите корректный email')
   .isLength({ max: 255 }).withMessage('Email слишком длинный');
 
+// 72 is the bcrypt limit: longer passwords are silently truncated
+const newPassword = body('password')
+  .isString().withMessage('Введите пароль')
+  .isLength({ min: 8 }).withMessage('Пароль должен быть не короче 8 символов')
+  .isLength({ max: 72 }).withMessage('Пароль должен быть не длиннее 72 символов');
+
 const registerRules = [
   email,
-  body('password')
-    .isString().withMessage('Введите пароль')
-    .isLength({ min: 8 }).withMessage('Пароль должен быть не короче 8 символов')
-    .isLength({ max: 72 }).withMessage('Пароль должен быть не длиннее 72 символов'),
+  newPassword,
   body('name')
     .isString().withMessage('Введите имя')
     .trim()
@@ -39,4 +42,6 @@ const loginRules = [
   handleValidation
 ];
 
-module.exports = { registerRules, loginRules, handleValidation };
+const setPasswordRules = [newPassword, handleValidation];
+
+module.exports = { registerRules, loginRules, setPasswordRules, handleValidation };
